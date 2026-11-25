@@ -3,735 +3,1313 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#075e54" />
-<link rel="manifest" href="./manifest.json" />
-<link rel="icon" type="image/svg+xml" href="./icon.svg" />
     <title>WhatsApp Shift Report Generator</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter & JetBrains Mono -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    colors: {
-                        whatsapp: {
-                            light: '#dcf8c6',
-                            DEFAULT: '#25D366',
-                            dark: '#128C7E',
-                            teal: '#075E54',
-                            bg: '#efeae2'
-                        }
-                    }
-                }
-            }
-        };
-    </script>
     <style>
-        /* Auto-expanding textareas for full mobile visibility */
+        /* =========================================================
+           BASE & DESIGN TOKENS (Zero external dependencies)
+           ========================================================= */
+        :root {
+            --bg-page: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-subtle: #f8fafc;
+            --bg-input: #f8fafc;
+            --border: #cbd5e1;
+            --border-light: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-light: #64748b;
+            --primary: #0f172a;
+            --accent: #059669;
+            --accent-hover: #047857;
+            --accent-soft: #ecfdf5;
+            --accent-border: #a7f3d0;
+            --blue: #2563eb;
+            --blue-soft: #eff6ff;
+            --blue-border: #bfdbfe;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+            --danger-soft: #fef2f2;
+            --wa-teal: #075e54;
+            --wa-green: #25d366;
+            --wa-green-dark: #128c7e;
+            --wa-bg: #efeae2;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+            --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            line-height: 1.45;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* =========================================================
+           HEADER
+           ========================================================= */
+        .app-header {
+            background: #0f172a;
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+        }
+
+        .header-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #10b981;
+            color: #052e16;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .brand-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+        }
+
+        .brand-sub {
+            margin: 0;
+            font-size: 12px;
+            color: #6ee7b7;
+            font-weight: 500;
+        }
+
+        .btn-reset {
+            min-height: 44px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-md);
+            background: var(--danger);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s ease;
+        }
+
+        .btn-reset:hover, .btn-reset:active {
+            background: var(--danger-hover);
+        }
+
+        /* =========================================================
+           LAYOUT
+           ========================================================= */
+        .main-container {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 16px 12px 40px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+            align-items: start;
+        }
+
+        @media (min-width: 980px) {
+            .main-container {
+                grid-template-columns: 7fr 5fr;
+                padding: 20px 20px 48px;
+                gap: 22px;
+            }
+            .preview-column {
+                position: sticky;
+                top: 74px;
+            }
+        }
+
+        .form-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* =========================================================
+           CARDS & SECTION HEADERS
+           ========================================================= */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-light);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .dot-blue { background: #2563eb; }
+        .dot-green { background: #10b981; }
+        .dot-amber { background: #f59e0b; }
+        .dot-purple { background: #7c3aed; }
+        .dot-indigo { background: #4f46e5; }
+        .dot-teal { background: #0d9488; }
+        .dot-cyan { background: #0891b2; }
+        .dot-slate { background: #334155; }
+
+        .card-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .badge-pioneer {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: var(--blue-soft);
+            color: #1d4ed8;
+            border: 1px solid var(--blue-border);
+        }
+
+        /* =========================================================
+           FORM CONTROLS
+           ========================================================= */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .grid-2-always {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        @media (min-width: 560px) {
+            .grid-2 {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .field-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .field-label.accent {
+            color: #047857;
+        }
+
+        .field-label.danger {
+            color: #dc2626;
+        }
+
+        .field-label.blue {
+            color: #1d4ed8;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"],
+        textarea {
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-main);
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            outline: none;
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        input:focus, textarea:focus {
+            background: #ffffff;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        input.mono, .stat-box.mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 700;
+        }
+
+        input.highlight-output {
+            background: var(--accent-soft);
+            border-color: #34d399;
+            color: #064e3b;
+        }
+
         textarea.auto-expand {
             overflow: hidden;
             resize: none;
-            min-height: 46px;
+            min-height: 48px;
+            line-height: 1.45;
         }
-        /* WhatsApp chat bubble styling */
+
+        .stat-box {
+            min-height: 44px;
+            padding: 10px 12px;
+            background: #f1f5f9;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-box.blue-box {
+            background: var(--blue-soft);
+            border-color: var(--blue-border);
+            color: #1e3a8a;
+        }
+
+        .metrics-panel {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .metrics-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* =========================================================
+           PILLS, TOGGLES & BUBBLES (44px+ touch targets)
+           ========================================================= */
+        .pill-group {
+            display: inline-flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: var(--radius-md);
+            gap: 4px;
+        }
+
+        .pill-btn {
+            min-height: 36px;
+            padding: 6px 12px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: #475569;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .pill-btn.active-green {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+
+        .pill-btn.active-slate {
+            background: #334155;
+            color: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+
+        .pill-btn.active-blue {
+            background: var(--blue);
+            color: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+
+        .pill-btn.active-cyan {
+            background: #0891b2;
+            color: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+
+        .bubble-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .bubble-btn {
+            min-height: 44px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--bg-subtle);
+            color: #334155;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .bubble-btn.shift-pill {
+            border-radius: var(--radius-md);
+            width: 100%;
+            text-align: center;
+        }
+
+        .bubble-btn.selected-dark {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+
+        .bubble-btn.selected-indigo {
+            background: #4f46e5;
+            color: #ffffff;
+            border-color: #4f46e5;
+        }
+
+        .bubble-btn.selected-teal {
+            background: #0d9488;
+            color: #ffffff;
+            border-color: #0d9488;
+        }
+
+        .btn-small {
+            min-height: 38px;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--blue-border);
+            background: var(--blue-soft);
+            color: #1d4ed8;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-small.active-dark {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+
+        .btn-small.active-green {
+            background: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+        }
+
+        .btn-icon-remove {
+            min-width: 40px;
+            min-height: 40px;
+            border: 1px solid #fecaca;
+            border-radius: var(--radius-sm);
+            background: var(--danger-soft);
+            color: var(--danger);
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* =========================================================
+           DYNAMIC LISTS (REMARKS & WOs)
+           ========================================================= */
+        .list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .remark-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .remark-num {
+            min-width: 30px;
+            height: 34px;
+            margin-top: 5px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            border: 1px solid var(--border-light);
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .wo-card {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .wo-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .wo-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .empty-hint {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        /* =========================================================
+           CHECKBOX ROW
+           ========================================================= */
+        .checkbox-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-border);
+            cursor: pointer;
+        }
+
+        .checkbox-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .checkbox-left input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            min-height: 22px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .total-pill {
+            background: #ffffff;
+            border: 1px solid var(--accent-border);
+            color: #065f46;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 14px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        /* =========================================================
+           WHATSAPP PREVIEW CARD
+           ========================================================= */
+        .wa-header {
+            background: var(--wa-teal);
+            color: #ffffff;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .wa-header-title {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .wa-header-sub {
+            margin: 0;
+            font-size: 11px;
+            color: #d1fae5;
+        }
+
+        .btn-quick-copy {
+            min-height: 40px;
+            padding: 6px 14px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: #34d399;
+            color: #052e16;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .stage-bar {
+            background: #0f172a;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stage-btn {
+            min-height: 44px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: #1e293b;
+            color: #cbd5e1;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .stage-btn.active {
+            background: #10b981;
+            color: #052e16;
+        }
+
+        .wa-canvas {
+            background-color: var(--wa-bg);
+            padding: 16px;
+        }
+
         .wa-bubble {
-            position: relative;
-            background-color: #ffffff;
-            border-radius: 0.75rem;
-            border-top-left-radius: 0;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 14px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+            font-size: 14px;
+            line-height: 1.5;
+            color: #111827;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
-        .wa-bubble::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -8px;
-            width: 0;
-            height: 0;
-            border-top: 8px solid #ffffff;
-            border-left: 8px solid transparent;
+
+        .wa-actions {
+            padding: 14px;
+            background: var(--bg-subtle);
+            border-top: 1px solid var(--border-light);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-action-copy, .btn-action-wa {
+            min-height: 48px;
+            padding: 10px 14px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            color: #ffffff;
+        }
+
+        .btn-action-copy {
+            background: #0f172a;
+        }
+
+        .btn-action-wa {
+            background: var(--wa-green-dark);
+        }
+
+        /* =========================================================
+           MODAL & TOAST
+           ========================================================= */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.65);
+            padding: 16px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            max-width: 360px;
+            width: 100%;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-title {
+            margin: 0 0 8px;
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .modal-text {
+            margin: 0 0 20px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-cancel {
+            min-height: 44px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-confirm-danger {
+            min-height: 44px;
+            border: none;
+            border-radius: var(--radius-md);
+            background: var(--danger);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .toast {
+            position: fixed;
+            top: 72px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 110;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            display: none;
+        }
+
+        .toast.show {
+            display: block;
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col pb-24 lg:pb-10">
+<body>
 
-    <!-- Top Navigation Header -->
-    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-2.5">
-                <div class="bg-emerald-500 p-2 rounded-xl text-slate-950 shadow-sm shrink-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
+    <!-- Top Header -->
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="brand">
+                <div class="brand-icon">SR</div>
                 <div>
-                    <h1 class="text-sm sm:text-base font-extrabold tracking-tight leading-tight">WhatsApp Shift Report</h1>
-                    <p class="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
-                        Auto-saved locally
-                    </p>
+                    <h1 class="brand-title">Shift Report Generator</h1>
+                    <p class="brand-sub">Pioneer Plant • Offline Ready</p>
                 </div>
             </div>
-
-            <!-- Reset Button -->
-            <button type="button" id="openResetModalBtn" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-sm transition active:scale-95">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
-                <span>Reset</span>
-            </button>
+            <button type="button" id="openResetBtn" class="btn-reset">Reset</button>
         </div>
     </header>
 
-    <!-- Custom Reset Confirmation Modal -->
-    <div id="resetModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
-            <div class="flex items-center gap-3 text-rose-600 mb-3">
-                <div class="p-2.5 bg-rose-100 rounded-xl shrink-0">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-extrabold text-slate-900">Reset Shift Report?</h3>
-            </div>
-            <p class="text-sm text-slate-600 leading-relaxed mb-6">
-                Do you want to clear every filled detail?
-            </p>
-            <div class="grid grid-cols-2 gap-3">
-                <button type="button" id="cancelResetBtn" class="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
-                    Cancel
-                </button>
-                <button type="button" id="confirmResetBtn" class="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-sm transition">
-                    Yes, Clear All
-                </button>
+    <!-- Custom Reset Confirmation Modal (Strictly display: none by default) -->
+    <div id="resetModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
+        <div class="modal-box">
+            <h2 id="resetModalTitle" class="modal-title">Reset Shift Report?</h2>
+            <p class="modal-text">Do you want to clear every filled detail?</p>
+            <div class="modal-actions">
+                <button type="button" id="cancelResetBtn" class="btn-cancel">Cancel</button>
+                <button type="button" id="confirmResetBtn" class="btn-confirm-danger">Yes, Reset</button>
             </div>
         </div>
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 transform -translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
-        <div class="bg-slate-900 text-white px-4 py-2.5 rounded-full shadow-xl border border-slate-700 flex items-center gap-2 text-xs sm:text-sm font-semibold">
-            <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
-            </svg>
-            <span id="toastMsg">Copied to clipboard!</span>
-        </div>
-    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <!-- Main Content Grid -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <!-- Main Content -->
+    <main class="main-container">
 
-            <!-- LEFT COLUMN: Form Controls (7 cols) -->
-            <div class="lg:col-span-7 space-y-5">
+        <!-- FORM COLUMN -->
+        <div class="form-column">
 
-                <!-- 1. Date, Location & Shift -->
-                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                            1. Date, Location &amp; Shift
-                        </h2>
-                        <span class="text-[11px] font-semibold text-slate-400">*Dear Sirs &amp; Ms.Priya,*</span>
-                    </div>
-                    <div class="p-4 sm:p-5 space-y-4">
-                        <div>
-                            <label for="reportDate" class="block text-xs font-bold text-slate-600 mb-1.5">Report Date</label>
-                            <input type="date" id="reportDate" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+            <!-- Shift Details -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><span class="dot dot-blue"></span>Shift Details</h2>
+                    <span class="badge-pioneer">Pioneer</span>
+                </div>
+                <div class="card-body">
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="reportDate" class="field-label">Report Date</label>
+                            <input type="date" id="reportDate">
                         </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <!-- Location Bubbles -->
-                            <div>
-                                <span class="block text-xs font-bold text-slate-600 mb-2">Location</span>
-                                <div class="grid grid-cols-2 gap-2" id="locationBubbles">
-                                    <button type="button" data-location="Pioneer" class="loc-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center">Pioneer</button>
-                                    <button type="button" data-location="Tuas" class="loc-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center">Tuas</button>
-                                </div>
-                            </div>
-
-                            <!-- Shift Bubbles -->
-                            <div>
-                                <span class="block text-xs font-bold text-slate-600 mb-2">Shift <span class="text-rose-500 font-normal">(Select)</span></span>
-                                <div class="grid grid-cols-2 gap-2" id="shiftBubbles">
-                                    <button type="button" data-shift="Morning" class="shift-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center">☀️ Morning</button>
-                                    <button type="button" data-shift="Night" class="shift-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center">🌙 Night</button>
-                                </div>
+                        <div class="field">
+                            <span class="field-label">Shift</span>
+                            <div class="grid-2-always">
+                                <button type="button" class="bubble-btn shift-pill" data-shift="Morning">Morning</button>
+                                <button type="button" class="bubble-btn shift-pill" data-shift="Night">Night</button>
                             </div>
                         </div>
-                    </div>
-                </section>
-
-                <!-- 2. Line-1 Production -->
-                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-2">
-                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                            2. Line-1 Production
-                        </h2>
-                        <div class="inline-flex rounded-xl bg-slate-200/80 p-1">
-                            <button type="button" id="l1ActiveBtn" class="px-3 py-1 rounded-lg text-xs font-bold transition">Active</button>
-                            <button type="button" id="l1InactiveBtn" class="px-3 py-1 rounded-lg text-xs font-bold transition">No Prod.</button>
-                        </div>
-                    </div>
-
-                    <div class="p-4 sm:p-5 space-y-5">
-                        <div id="line1Fields" class="space-y-4">
-                            <!-- Operators -->
-                            <div class="grid grid-cols-3 gap-2.5">
-                                <div>
-                                    <label for="l1Dumping" class="block text-xs font-bold text-slate-600 mb-1">Dumping Ops</label>
-                                    <input type="number" id="l1Dumping" min="0" max="99" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                </div>
-                                <div>
-                                    <label for="l1Packing" class="block text-xs font-bold text-slate-600 mb-1">Packing Ops</label>
-                                    <input type="number" id="l1Packing" min="0" max="99" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                </div>
-                                <div>
-                                    <span class="block text-xs font-bold text-slate-500 mb-1">Line-1 Total</span>
-                                    <div id="l1TotalOpsDisplay" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-mono font-extrabold text-slate-800">06</div>
-                                </div>
-                            </div>
-
-                            <!-- Output & Time Metrics -->
-                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3.5">
-                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <span class="text-xs font-extrabold uppercase tracking-wide text-slate-600">Output Mode</span>
-                                    <div class="inline-flex rounded-xl bg-slate-200 p-1">
-                                        <button type="button" id="l1ModeCurrent" class="px-3 py-1 rounded-lg text-xs font-bold transition">Current Output</button>
-                                        <button type="button" id="l1ModeFinal" class="px-3 py-1 rounded-lg text-xs font-bold transition">Final Output</button>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                                    <div>
-                                        <label for="l1Target" class="block text-xs font-bold text-slate-600 mb-1">Target (MT)</label>
-                                        <input type="number" id="l1Target" step="0.001" min="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <label id="l1OutputLabel" for="l1Output" class="block text-xs font-bold text-emerald-700 mb-1">Current Output (MT)</label>
-                                        <input type="number" id="l1Output" step="0.001" min="0" placeholder="0.000" class="w-full px-3 py-2.5 bg-emerald-50/70 border border-emerald-400 rounded-xl text-sm font-mono font-bold text-emerald-950 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <span id="l1VarianceLabel" class="block text-xs font-bold text-slate-500 mb-1">Balance (MT)</span>
-                                        <div id="l1VarianceDisplay" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-mono font-extrabold text-slate-800">50.000</div>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 items-end">
-                                    <div>
-                                        <label for="l1StartTime" class="block text-xs font-bold text-slate-600 mb-1">Start Time</label>
-                                        <input type="time" id="l1StartTime" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <label for="l1EndTime" class="block text-xs font-bold text-slate-600 mb-1">End Time</label>
-                                        <input type="time" id="l1EndTime" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div class="col-span-2 sm:col-span-1">
-                                        <span class="block text-xs font-bold text-slate-500 mb-1">Operating Duration</span>
-                                        <div id="l1OpDurationDisplay" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700 truncate">12 hrs</div>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-3 gap-2.5 items-end">
-                                    <div>
-                                        <label for="l1RunHrs" class="block text-xs font-bold text-slate-600 mb-1">Run Hrs</label>
-                                        <input type="number" id="l1RunHrs" min="0" max="24" placeholder="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <label for="l1RunMins" class="block text-xs font-bold text-slate-600 mb-1">Run Mins</label>
-                                        <input type="number" id="l1RunMins" min="0" max="59" placeholder="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <span class="block text-xs font-bold text-blue-700 mb-1">Efficiency</span>
-                                        <div id="l1EfficiencyDisplay" class="w-full px-2.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-xs sm:text-sm font-mono font-extrabold text-blue-900">0.000</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Line-1 Remarks -->
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-extrabold uppercase tracking-wide text-slate-600">Line-1 Remarks</span>
-                                <button type="button" id="addL1RemarkBtn" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition active:scale-95">
-                                    + Add Remark
-                                </button>
-                            </div>
-                            <div id="line1RemarksList" class="space-y-2.5"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 3. Line-2 Production -->
-                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-2">
-                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                            3. Line-2 Production
-                        </h2>
-                        <div class="inline-flex rounded-xl bg-slate-200/80 p-1">
-                            <button type="button" id="l2ActiveBtn" class="px-3 py-1 rounded-lg text-xs font-bold transition">Active</button>
-                            <button type="button" id="l2InactiveBtn" class="px-3 py-1 rounded-lg text-xs font-bold transition">No Prod.</button>
-                        </div>
-                    </div>
-
-                    <div class="p-4 sm:p-5 space-y-5">
-                        <div id="line2Fields" class="space-y-4">
-                            <!-- Operators -->
-                            <div class="grid grid-cols-3 gap-2.5">
-                                <div>
-                                    <label for="l2Dumping" class="block text-xs font-bold text-slate-600 mb-1">Dumping Ops</label>
-                                    <input type="number" id="l2Dumping" min="0" max="99" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                </div>
-                                <div>
-                                    <label for="l2Packing" class="block text-xs font-bold text-slate-600 mb-1">Packing Ops</label>
-                                    <input type="number" id="l2Packing" min="0" max="99" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                </div>
-                                <div>
-                                    <span class="block text-xs font-bold text-slate-500 mb-1">Line-2 Total</span>
-                                    <div id="l2TotalOpsDisplay" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-mono font-extrabold text-slate-800">06</div>
-                                </div>
-                            </div>
-
-                            <!-- Output & Time Metrics -->
-                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3.5">
-                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <span class="text-xs font-extrabold uppercase tracking-wide text-slate-600">Output Mode</span>
-                                    <div class="inline-flex rounded-xl bg-slate-200 p-1">
-                                        <button type="button" id="l2ModeCurrent" class="px-3 py-1 rounded-lg text-xs font-bold transition">Current Output</button>
-                                        <button type="button" id="l2ModeFinal" class="px-3 py-1 rounded-lg text-xs font-bold transition">Final Output</button>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                                    <div>
-                                        <label for="l2Target" class="block text-xs font-bold text-slate-600 mb-1">Target (MT)</label>
-                                        <input type="number" id="l2Target" step="0.001" min="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <label id="l2OutputLabel" for="l2Output" class="block text-xs font-bold text-emerald-700 mb-1">Current Output (MT)</label>
-                                        <input type="number" id="l2Output" step="0.001" min="0" placeholder="0.000" class="w-full px-3 py-2.5 bg-emerald-50/70 border border-emerald-400 rounded-xl text-sm font-mono font-bold text-emerald-950 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <span id="l2VarianceLabel" class="block text-xs font-bold text-slate-500 mb-1">Balance (MT)</span>
-                                        <div id="l2VarianceDisplay" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-mono font-extrabold text-slate-800">33.000</div>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 items-end">
-                                    <div>
-                                        <label for="l2StartTime" class="block text-xs font-bold text-slate-600 mb-1">Start Time</label>
-                                        <input type="time" id="l2StartTime" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <label for="l2EndTime" class="block text-xs font-bold text-slate-600 mb-1">End Time</label>
-                                        <input type="time" id="l2EndTime" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div class="col-span-2 sm:col-span-1">
-                                        <span class="block text-xs font-bold text-slate-500 mb-1">Operating Duration</span>
-                                        <div id="l2OpDurationDisplay" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700 truncate">12 hrs</div>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-3 gap-2.5 items-end">
-                                    <div>
-                                        <label for="l2RunHrs" class="block text-xs font-bold text-slate-600 mb-1">Run Hrs</label>
-                                        <input type="number" id="l2RunHrs" min="0" max="24" placeholder="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <label for="l2RunMins" class="block text-xs font-bold text-slate-600 mb-1">Run Mins</label>
-                                        <input type="number" id="l2RunMins" min="0" max="59" placeholder="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <span class="block text-xs font-bold text-blue-700 mb-1">Efficiency</span>
-                                        <div id="l2EfficiencyDisplay" class="w-full px-2.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-xs sm:text-sm font-mono font-extrabold text-blue-900">0.000</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Line-2 Remarks -->
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-extrabold uppercase tracking-wide text-slate-600">Line-2 Remarks</span>
-                                <button type="button" id="addL2RemarkBtn" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition active:scale-95">
-                                    + Add Remark
-                                </button>
-                            </div>
-                            <div id="line2RemarksList" class="space-y-2.5"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 4. Total Output, Batching & Labelling -->
-                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200">
-                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
-                            4. Total Output, Batching &amp; Labelling
-                        </h2>
-                    </div>
-                    <div class="p-4 sm:p-5 space-y-4">
-                        <!-- Total Output Checkbox -->
-                        <label for="showTotalOutput" class="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 cursor-pointer select-none">
-                            <div class="flex items-center gap-3">
-                                <input type="checkbox" id="showTotalOutput" class="w-5 h-5 rounded-md text-emerald-600 focus:ring-emerald-500 border-slate-300">
-                                <div>
-                                    <span class="text-sm font-bold text-slate-900 block">Include Total Output Line</span>
-                                    <span class="text-[11px] text-slate-500">Placed right after Line-2 in Interval / Final report</span>
-                                </div>
-                            </div>
-                            <span class="text-sm font-mono font-extrabold text-emerald-800 bg-white px-2.5 py-1 rounded-lg border border-emerald-200">
-                                <span id="totalOutputBadge">0.000</span>MT
-                            </span>
-                        </label>
-
-                        <!-- Batching -->
-                        <div>
-                            <div class="flex items-center justify-between gap-2 mb-1.5">
-                                <label for="batchingInput" class="text-xs font-bold text-slate-600">Batching Manpower</label>
-                                <button type="button" id="batchingNilBtn" class="px-3 py-1 rounded-lg text-xs font-bold border transition">NIL</button>
-                            </div>
-                            <input type="text" id="batchingInput" placeholder="e.g. 03 Operators or 02 Contract Workers" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-
-                        <!-- Labelling -->
-                        <div>
-                            <label for="labellingText" class="block text-xs font-bold text-slate-600 mb-1.5">Labelling Details</label>
-                            <textarea id="labellingText" rows="2" placeholder="e.g. WO 0798 (7200pcs) & 0588 (5040pcs) or 01 People & Me Stickers Work..." class="auto-expand w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 5. Production Supervisors & QC -->
-                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200">
-                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-                            5. Production Supervisor &amp; QC
-                        </h2>
-                    </div>
-                    <div class="p-4 sm:p-5 space-y-4">
-                        <div>
-                            <span class="block text-xs font-bold text-slate-600 mb-2">Production Supervisors <span class="text-slate-400 font-normal">(Select one or more)</span></span>
-                            <div class="flex flex-wrap gap-2" id="supervisorBubbles">
-                                <button type="button" data-sup="Balaji" class="sup-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Balaji</button>
-                                <button type="button" data-sup="Anson" class="sup-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Anson</button>
-                                <button type="button" data-sup="Chi Hui" class="sup-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Chi Hui</button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <span class="block text-xs font-bold text-slate-600 mb-2">QC Personnel <span class="text-slate-400 font-normal">(Select one or more)</span></span>
-                            <div class="flex flex-wrap gap-2" id="qcBubbles">
-                                <button type="button" data-qc="Mohan" class="qc-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Mohan</button>
-                                <button type="button" data-qc="Kishore" class="qc-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Kishore</button>
-                                <button type="button" data-qc="Vidhya" class="qc-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Vidhya</button>
-                                <button type="button" data-qc="Kirthana" class="qc-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Kirthana</button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 6. Leave & Attendance -->
-                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-2">
-                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
-                            6. Leave &amp; Attendance
-                        </h2>
-                        <button type="button" id="allPresentBtn" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition">
-                            All Present
-                        </button>
-                    </div>
-                    <div class="p-4 sm:p-5">
-                        <div id="allPresentBanner" class="hidden p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs sm:text-sm font-bold text-emerald-800">
-                            ✓ Will output: Leave: All Present.
-                        </div>
-                        <div id="leaveTextWrap">
-                            <label for="leaveText" class="block text-xs font-bold text-slate-500 mb-1.5">Enter names (one per line — expands automatically):</label>
-                            <textarea id="leaveText" rows="2" placeholder="e.g.&#10;Arjun - UPL&#10;Fan Lu Qian - AL" class="auto-expand w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 7. Product & WO Details (Tabbed for Line 1 & Line 2) -->
-                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-2">
-                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-cyan-600"></span>
-                            7. Product &amp; WO Details
-                        </h2>
-                        <!-- Line 1 / Line 2 Tab Switcher -->
-                        <div class="inline-flex rounded-xl bg-slate-200/80 p-1">
-                            <button type="button" id="woTabL1Btn" class="px-3 py-1 rounded-lg text-xs font-bold transition">Line 1</button>
-                            <button type="button" id="woTabL2Btn" class="px-3 py-1 rounded-lg text-xs font-bold transition">Line 2</button>
-                        </div>
-                    </div>
-
-                    <div class="p-4 sm:p-5">
-                        <!-- Line 1 WOs Panel -->
-                        <div id="woPanelL1" class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-extrabold uppercase tracking-wide text-slate-600">*Line 1:* Work Orders</span>
-                                <button type="button" id="addL1WoBtn" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition active:scale-95">
-                                    + Add WO
-                                </button>
-                            </div>
-                            <div id="l1WoList" class="space-y-3"></div>
-                        </div>
-
-                        <!-- Line 2 WOs Panel -->
-                        <div id="woPanelL2" class="hidden space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-extrabold uppercase tracking-wide text-slate-600">*Line 2:* Work Orders</span>
-                                <button type="button" id="addL2WoBtn" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition active:scale-95">
-                                    + Add WO
-                                </button>
-                            </div>
-                            <div id="l2WoList" class="space-y-3"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 8. Sign-Off / Sender's Name -->
-                <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
-                            8. Sender's Name / Sign-Off
-                        </h2>
-                        <span class="text-[11px] text-slate-400 font-medium">Auto-synced with Supervisors</span>
-                    </div>
-                    <div class="p-4 sm:p-5 space-y-3">
-                        <div class="flex flex-wrap gap-2" id="signOffBubbles">
-                            <button type="button" data-sign="N. Balaji" class="sign-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">N. Balaji</button>
-                            <button type="button" data-sign="Anson" class="sign-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Anson</button>
-                            <button type="button" data-sign="Chi Hui" class="sign-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Chi Hui</button>
-                        </div>
-                        <div>
-                            <label for="customSignOff" class="sr-only">Custom Sign-Off Name</label>
-                            <input type="text" id="customSignOff" placeholder="Or type custom sign-off name..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                    </div>
-                </section>
-
-            </div>
-
-            <!-- RIGHT COLUMN: WhatsApp Live Preview (5 cols) -->
-            <div class="lg:col-span-5 lg:sticky lg:top-16 space-y-4">
-                <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden flex flex-col">
-                    <!-- Preview Header with Quick Copy -->
-                    <div class="bg-whatsapp-teal text-white px-4 py-3 flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center font-extrabold text-xs shrink-0">
-                                WA
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-bold leading-tight">WhatsApp Preview</h3>
-                                <p class="text-[11px] text-emerald-100/85">Live formatted message</p>
-                            </div>
-                        </div>
-                        <button type="button" id="previewCopyBtn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 active:bg-emerald-500 text-slate-950 font-extrabold text-xs shadow-sm transition active:scale-95 shrink-0">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                            </svg>
-                            <span>Copy</span>
-                        </button>
-                    </div>
-
-                    <!-- Stage Switcher (ONLY changes preview text, never hides inputs) -->
-                    <div class="bg-slate-900 p-2.5 border-b border-slate-800">
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" id="stageStartBtn" class="py-2.5 px-3 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5">
-                                <span>🚀</span>
-                                <span>Start of Shift</span>
-                            </button>
-                            <button type="button" id="stageOutputBtn" class="py-2.5 px-3 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5">
-                                <span>📊</span>
-                                <span>Interval / Final</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Chat Wallpaper Preview -->
-                    <div class="bg-whatsapp-bg p-4 sm:p-5" style="background-image: radial-gradient(#cbd5e1 0.8px, transparent 0.8px); background-size: 16px 16px;">
-                        <div class="wa-bubble p-3.5 sm:p-4 text-[13.5px] leading-[1.48] text-slate-900 font-sans break-words">
-                            <div id="whatsappPreviewRendered" class="whitespace-pre-wrap"></div>
-                            <div class="text-right mt-2 flex items-center justify-end gap-1 text-[10px] text-slate-400 select-none">
-                                <span id="previewTimestamp">08:00</span>
-                                <svg class="w-3.5 h-3.5 text-sky-500" viewBox="0 0 16 15" fill="currentColor">
-                                    <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z"/>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Hidden Raw Textarea for Reliable Clipboard Copy -->
-                    <textarea id="rawOutputText" class="sr-only" aria-hidden="true"></textarea>
-
-                    <!-- Desktop Action Buttons -->
-                    <div class="hidden lg:grid p-4 bg-slate-50 border-t border-slate-200 grid-cols-2 gap-3">
-                        <button type="button" id="desktopCopyBtn" class="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition active:scale-95">
-                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                            </svg>
-                            <span>Copy Report</span>
-                        </button>
-                        <button type="button" id="desktopWaBtn" class="w-full py-3 px-4 rounded-xl bg-whatsapp hover:bg-whatsapp-dark text-white font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition active:scale-95">
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
-                            </svg>
-                            <span>Send to WhatsApp</span>
-                        </button>
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <!-- Line-1 -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><span class="dot dot-green"></span>Line-1</h2>
+                    <div class="pill-group">
+                        <button type="button" id="l1ActiveBtn" class="pill-btn">Active</button>
+                        <button type="button" id="l1InactiveBtn" class="pill-btn">No Production</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="l1Fields">
+                        <div class="grid-3" style="margin-bottom: 12px;">
+                            <div class="field">
+                                <label for="l1Dumping" class="field-label">Dumping</label>
+                                <input type="number" id="l1Dumping" class="mono" min="0" max="99" inputmode="numeric">
+                            </div>
+                            <div class="field">
+                                <label for="l1Packing" class="field-label">Packing</label>
+                                <input type="number" id="l1Packing" class="mono" min="0" max="99" inputmode="numeric">
+                            </div>
+                            <div class="field">
+                                <span class="field-label">Total Ops</span>
+                                <div id="l1TotalOps" class="stat-box mono">06</div>
+                            </div>
+                        </div>
+
+                        <div class="metrics-panel">
+                            <div class="metrics-header">
+                                <span class="field-label">Output Mode</span>
+                                <div class="pill-group">
+                                    <button type="button" id="l1ModeCurrent" class="pill-btn">Current Output</button>
+                                    <button type="button" id="l1ModeFinal" class="pill-btn">Final Output</button>
+                                </div>
+                            </div>
+
+                            <div class="grid-3">
+                                <div class="field">
+                                    <label for="l1Target" class="field-label">Target (MT)</label>
+                                    <input type="number" id="l1Target" class="mono" step="0.001" min="0" inputmode="decimal">
+                                </div>
+                                <div class="field">
+                                    <label for="l1Output" id="l1OutputLabel" class="field-label accent">Current (MT)</label>
+                                    <input type="number" id="l1Output" class="mono highlight-output" step="0.001" min="0" placeholder="0.000" inputmode="decimal">
+                                </div>
+                                <div class="field">
+                                    <span id="l1VarianceLabel" class="field-label">Balance (MT)</span>
+                                    <div id="l1VarianceDisplay" class="stat-box mono">50.000</div>
+                                </div>
+                            </div>
+
+                            <div class="grid-3">
+                                <div class="field">
+                                    <label for="l1StartTime" class="field-label">Start Time</label>
+                                    <input type="time" id="l1StartTime" class="mono">
+                                </div>
+                                <div class="field">
+                                    <label for="l1EndTime" class="field-label">End Time</label>
+                                    <input type="time" id="l1EndTime" class="mono">
+                                </div>
+                                <div class="field">
+                                    <span class="field-label">Duration</span>
+                                    <div id="l1OpDuration" class="stat-box mono" style="font-size: 13px;">12 hrs</div>
+                                </div>
+                            </div>
+
+                            <div class="grid-3">
+                                <div class="field">
+                                    <label for="l1RunHrs" class="field-label">Run Hrs</label>
+                                    <input type="number" id="l1RunHrs" class="mono" min="0" max="24" placeholder="0" inputmode="numeric">
+                                </div>
+                                <div class="field">
+                                    <label for="l1RunMins" class="field-label">Run Mins</label>
+                                    <input type="number" id="l1RunMins" class="mono" min="0" max="59" placeholder="0" inputmode="numeric">
+                                </div>
+                                <div class="field">
+                                    <span class="field-label blue">Efficiency</span>
+                                    <div id="l1Efficiency" class="stat-box mono blue-box">0.000</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="list-header">
+                        <span class="field-label">Line-1 Remarks</span>
+                        <button type="button" id="addL1RemarkBtn" class="btn-small">+ Add Remark</button>
+                    </div>
+                    <div id="l1RemarksList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+            </section>
+
+            <!-- Line-2 -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><span class="dot dot-amber"></span>Line-2</h2>
+                    <div class="pill-group">
+                        <button type="button" id="l2ActiveBtn" class="pill-btn">Active</button>
+                        <button type="button" id="l2InactiveBtn" class="pill-btn">No Production</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="l2Fields">
+                        <div class="grid-3" style="margin-bottom: 12px;">
+                            <div class="field">
+                                <label for="l2Dumping" class="field-label">Dumping</label>
+                                <input type="number" id="l2Dumping" class="mono" min="0" max="99" inputmode="numeric">
+                            </div>
+                            <div class="field">
+                                <label for="l2Packing" class="field-label">Packing</label>
+                                <input type="number" id="l2Packing" class="mono" min="0" max="99" inputmode="numeric">
+                            </div>
+                            <div class="field">
+                                <span class="field-label">Total Ops</span>
+                                <div id="l2TotalOps" class="stat-box mono">06</div>
+                            </div>
+                        </div>
+
+                        <div class="metrics-panel">
+                            <div class="metrics-header">
+                                <span class="field-label">Output Mode</span>
+                                <div class="pill-group">
+                                    <button type="button" id="l2ModeCurrent" class="pill-btn">Current Output</button>
+                                    <button type="button" id="l2ModeFinal" class="pill-btn">Final Output</button>
+                                </div>
+                            </div>
+
+                            <div class="grid-3">
+                                <div class="field">
+                                    <label for="l2Target" class="field-label">Target (MT)</label>
+                                    <input type="number" id="l2Target" class="mono" step="0.001" min="0" inputmode="decimal">
+                                </div>
+                                <div class="field">
+                                    <label for="l2Output" id="l2OutputLabel" class="field-label accent">Current (MT)</label>
+                                    <input type="number" id="l2Output" class="mono highlight-output" step="0.001" min="0" placeholder="0.000" inputmode="decimal">
+                                </div>
+                                <div class="field">
+                                    <span id="l2VarianceLabel" class="field-label">Balance (MT)</span>
+                                    <div id="l2VarianceDisplay" class="stat-box mono">33.000</div>
+                                </div>
+                            </div>
+
+                            <div class="grid-3">
+                                <div class="field">
+                                    <label for="l2StartTime" class="field-label">Start Time</label>
+                                    <input type="time" id="l2StartTime" class="mono">
+                                </div>
+                                <div class="field">
+                                    <label for="l2EndTime" class="field-label">End Time</label>
+                                    <input type="time" id="l2EndTime" class="mono">
+                                </div>
+                                <div class="field">
+                                    <span class="field-label">Duration</span>
+                                    <div id="l2OpDuration" class="stat-box mono" style="font-size: 13px;">12 hrs</div>
+                                </div>
+                            </div>
+
+                            <div class="grid-3">
+                                <div class="field">
+                                    <label for="l2RunHrs" class="field-label">Run Hrs</label>
+                                    <input type="number" id="l2RunHrs" class="mono" min="0" max="24" placeholder="0" inputmode="numeric">
+                                </div>
+                                <div class="field">
+                                    <label for="l2RunMins" class="field-label">Run Mins</label>
+                                    <input type="number" id="l2RunMins" class="mono" min="0" max="59" placeholder="0" inputmode="numeric">
+                                </div>
+                                <div class="field">
+                                    <span class="field-label blue">Efficiency</span>
+                                    <div id="l2Efficiency" class="stat-box mono blue-box">0.000</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="list-header">
+                        <span class="field-label">Line-2 Remarks</span>
+                        <button type="button" id="addL2RemarkBtn" class="btn-small">+ Add Remark</button>
+                    </div>
+                    <div id="l2RemarksList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+            </section>
+
+            <!-- Total Output, Batching & Labelling -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><span class="dot dot-purple"></span>Total Output, Batching &amp; Labelling</h2>
+                </div>
+                <div class="card-body">
+                    <label for="showTotalOutput" class="checkbox-card">
+                        <div class="checkbox-left">
+                            <input type="checkbox" id="showTotalOutput">
+                            <div>
+                                <div style="font-size: 14px; font-weight: 700; color: #0f172a;">Show Total Output in report</div>
+                                <div style="font-size: 12px; color: #475569;">Appears right after Line-2 in Interval / Final mode</div>
+                            </div>
+                        </div>
+                        <span class="total-pill"><span id="totalOutputBadge">0.000</span>MT</span>
+                    </label>
+
+                    <div class="field">
+                        <div class="list-header">
+                            <label for="batchingInput" class="field-label">Batching</label>
+                            <button type="button" id="batchingNilBtn" class="btn-small">NIL</button>
+                        </div>
+                        <input type="text" id="batchingInput" placeholder="e.g. 5 or 03 Operators or 02 Contract Workers">
+                    </div>
+
+                    <div class="field">
+                        <label for="labellingInput" class="field-label">Labelling</label>
+                        <textarea id="labellingInput" class="auto-expand" rows="2" placeholder="e.g. WO 0798 (7200pcs) &amp; 0588 (5040pcs)"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Production Supervisor & QC -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><span class="dot dot-indigo"></span>Production Supervisor &amp; QC</h2>
+                </div>
+                <div class="card-body">
+                    <div class="field">
+                        <span class="field-label">Production Supervisors</span>
+                        <div class="bubble-wrap">
+                            <button type="button" class="bubble-btn sup-btn" data-sup="Balaji">Balaji</button>
+                            <button type="button" class="bubble-btn sup-btn" data-sup="Anson">Anson</button>
+                            <button type="button" class="bubble-btn sup-btn" data-sup="Chi Hui">Chi Hui</button>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <span class="field-label">QC</span>
+                        <div class="bubble-wrap">
+                            <button type="button" class="bubble-btn qc-btn" data-qc="Mohan">Mohan</button>
+                            <button type="button" class="bubble-btn qc-btn" data-qc="Kishore">Kishore</button>
+                            <button type="button" class="bubble-btn qc-btn" data-qc="Vidhya">Vidhya</button>
+                            <button type="button" class="bubble-btn qc-btn" data-qc="Kirthana">Kirthana</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Leave & Attendance -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><span class="dot dot-teal"></span>Leave &amp; Attendance</h2>
+                    <button type="button" id="allPresentBtn" class="btn-small">All Present</button>
+                </div>
+                <div class="card-body">
+                    <div class="field">
+                        <label for="leaveInput" class="field-label">Attendance / Leave Details (always editable)</label>
+                        <textarea id="leaveInput" class="auto-expand" rows="2" placeholder="All Present.&#10;or&#10;Arjun - UPL&#10;Fan Lu Qian - AL"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Product & WO Details -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><span class="dot dot-cyan"></span>Product &amp; WO Details</h2>
+                    <div class="pill-group">
+                        <button type="button" id="woTab1Btn" class="pill-btn">Line 1</button>
+                        <button type="button" id="woTab2Btn" class="pill-btn">Line 2</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="woPanel1" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div class="list-header">
+                            <span class="field-label">Line 1 Work Orders</span>
+                            <button type="button" id="addL1WoBtn" class="btn-small">+ Add WO</button>
+                        </div>
+                        <div id="l1WoList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                    </div>
+
+                    <div id="woPanel2" class="hidden" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div class="list-header">
+                            <span class="field-label">Line 2 Work Orders</span>
+                            <button type="button" id="addL2WoBtn" class="btn-small">+ Add WO</button>
+                        </div>
+                        <div id="l2WoList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sign-Off (Sender's Name) -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><span class="dot dot-slate"></span>Sender's Name / Sign-Off</h2>
+                </div>
+                <div class="card-body">
+                    <div class="bubble-wrap">
+                        <button type="button" class="bubble-btn sign-btn" data-sign="N. Balaji">N. Balaji</button>
+                        <button type="button" class="bubble-btn sign-btn" data-sign="Anson">Anson</button>
+                        <button type="button" class="bubble-btn sign-btn" data-sign="Chi Hui">Chi Hui</button>
+                    </div>
+                    <div class="field">
+                        <label for="customSignOff" class="field-label">Custom Sender Name (optional)</label>
+                        <input type="text" id="customSignOff" placeholder="Or type custom sender name...">
+                    </div>
+                </div>
+            </section>
 
         </div>
+
+        <!-- WHATSAPP PREVIEW COLUMN -->
+        <div class="preview-column">
+            <section class="card">
+                <div class="wa-header">
+                    <div>
+                        <h3 class="wa-header-title">WhatsApp Preview</h3>
+                        <p class="wa-header-sub">Live formatted report</p>
+                    </div>
+                    <button type="button" id="headerCopyBtn" class="btn-quick-copy">Copy</button>
+                </div>
+
+                <!-- Report Stage Switcher (Controls ONLY preview output) -->
+                <div class="stage-bar">
+                    <button type="button" id="stageStartBtn" class="stage-btn">Start of Shift</button>
+                    <button type="button" id="stageOutputBtn" class="stage-btn">Interval / Final</button>
+                </div>
+
+                <div class="wa-canvas">
+                    <div id="waPreviewBox" class="wa-bubble"></div>
+                </div>
+
+                <!-- Directly below preview box (NOT sticky/fixed) -->
+                <div class="wa-actions">
+                    <button type="button" id="copyReportBtn" class="btn-action-copy">Copy Report</button>
+                    <button type="button" id="sendWaBtn" class="btn-action-wa">Send to WhatsApp</button>
+                </div>
+            </section>
+        </div>
+
     </main>
-
-    <!-- Sticky Bottom Action Bar (Mobile / Tablet) -->
-    <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
-        <div class="max-w-xl mx-auto grid grid-cols-2 gap-2.5">
-            <button type="button" id="mobileCopyBtn" class="py-3 px-4 rounded-xl bg-slate-900 active:bg-slate-800 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
-                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                </svg>
-                <span>Copy Report</span>
-            </button>
-            <button type="button" id="mobileWaBtn" class="py-3 px-4 rounded-xl bg-whatsapp active:bg-whatsapp-dark text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
-                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
-                </svg>
-                <span>Send to WhatsApp</span>
-            </button>
-        </div>
-    </div>
 
     <script>
         (function () {
             'use strict';
 
-            const STORAGE_KEY = 'wa_shift_report_generator_v3';
-            let state = {};
-            let activeWoTab = 1;
-            let toastTimer = null;
+            var STORAGE_KEY = 'pioneer_shift_report_v4';
+            var LEGACY_KEYS = [
+                'pioneer_shift_report_data',
+                'wa_shift_report_generator_v3',
+                'shiftReportState',
+                'shift_report_data',
+                'waShiftReport',
+                'shift_report_state'
+            ];
 
-            // --- Utility Helpers ---
+            var state = null;
+            var activeWoTab = 1;
+            var toastTimer = null;
+
+            /* =========================================================
+               UTILITY HELPERS
+               ========================================================= */
+            function el(id) {
+                return document.getElementById(id);
+            }
+
             function getTodayISO() {
-                const now = new Date();
-                const y = now.getFullYear();
-                const m = String(now.getMonth() + 1).padStart(2, '0');
-                const d = String(now.getDate()).padStart(2, '0');
-                return `${y}-${m}-${d}`;
+                var now = new Date();
+                var y = now.getFullYear();
+                var m = String(now.getMonth() + 1).padStart(2, '0');
+                var d = String(now.getDate()).padStart(2, '0');
+                return y + '-' + m + '-' + d;
             }
 
             function formatDateDDMMYYYY(iso) {
-                if (!iso) return '';
-                const parts = iso.split('-');
+                if (!iso || typeof iso !== 'string') return '';
+                var parts = iso.split('-');
                 if (parts.length !== 3) return iso;
-                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                return parts[2] + '/' + parts[1] + '/' + parts[0];
             }
 
             function pad2(val) {
-                const n = Math.max(0, parseInt(val, 10) || 0);
+                var n = parseInt(val, 10);
+                if (isNaN(n) || n < 0) n = 0;
                 return String(n).padStart(2, '0');
             }
 
             function formatTime12h(hhmm) {
-                if (!hhmm || !hhmm.includes(':')) return '';
-                const [hStr, mStr] = hhmm.split(':');
-                let h = parseInt(hStr, 10);
-                const m = parseInt(mStr, 10);
+                if (!hhmm || hhmm.indexOf(':') === -1) return '';
+                var parts = hhmm.split(':');
+                var h = parseInt(parts[0], 10);
+                var m = parseInt(parts[1], 10);
                 if (isNaN(h) || isNaN(m)) return '';
-                const suffix = h >= 12 ? 'pm' : 'am';
-                let h12 = h % 12;
+                var suffix = h >= 12 ? 'pm' : 'am';
+                var h12 = h % 12;
                 if (h12 === 0) h12 = 12;
-                return `${String(h12).padStart(2, '0')}${String(m).padStart(2, '0')}${suffix}`;
+                return String(h12).padStart(2, '0') + String(m).padStart(2, '0') + suffix;
             }
 
             function calcOperatingDuration(startHHMM, endHHMM) {
                 if (!startHHMM || !endHHMM) return '';
-                const [sh, sm] = startHHMM.split(':').map(Number);
-                const [eh, em] = endHHMM.split(':').map(Number);
-                if ([sh, sm, eh, em].some(isNaN)) return '';
-                let startTotal = sh * 60 + sm;
-                let endTotal = eh * 60 + em;
-                if (endTotal <= startTotal) {
-                    endTotal += 24 * 60; // Overnight shift
+                var s = startHHMM.split(':');
+                var e = endHHMM.split(':');
+                var sh = parseInt(s[0], 10), sm = parseInt(s[1], 10);
+                var eh = parseInt(e[0], 10), em = parseInt(e[1], 10);
+                if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return '';
+                var startMin = sh * 60 + sm;
+                var endMin = eh * 60 + em;
+                if (endMin <= startMin) {
+                    endMin += 24 * 60;
                 }
-                const diff = endTotal - startTotal;
-                const hrs = Math.floor(diff / 60);
-                const mins = diff % 60;
-                if (mins === 0) return `${hrs} hrs`;
-                return `${hrs} hrs ${mins} mins`;
+                var diff = endMin - startMin;
+                var hrs = Math.floor(diff / 60);
+                var mins = diff % 60;
+                if (mins === 0) return hrs + ' hrs';
+                return hrs + ' hrs ' + mins + 'mins';
             }
 
             function formatRunningHrs(hrsVal, minsVal) {
-                const h = parseInt(hrsVal, 10) || 0;
-                const m = parseInt(minsVal, 10) || 0;
+                var h = parseInt(hrsVal, 10) || 0;
+                var m = parseInt(minsVal, 10) || 0;
                 if (h === 0 && m === 0) return '0 hrs';
-                if (m === 0) return `${h} hrs`;
-                if (h === 0) return `${m} mins`;
-                return `${h} hrs ${m} mins`;
+                if (m === 0) return h + ' hrs';
+                if (h === 0) return m + ' mins';
+                return h + ' hrs ' + m + ' mins';
             }
 
-            function autoResize(el) {
-                if (!el) return;
-                el.style.height = 'auto';
-                el.style.height = Math.max(46, el.scrollHeight) + 'px';
-            }
-
-            function escapeHtml(str) {
-                return String(str)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#39;');
-            }
-
-            function mapSupervisorToSignOff(name) {
-                return name === 'Balaji' ? 'N. Balaji' : name;
+            function autoResize(textarea) {
+                if (!textarea) return;
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.max(48, textarea.scrollHeight) + 'px';
             }
 
             function formatNameList(arr) {
-                if (!arr || arr.length === 0) return '';
+                if (!Array.isArray(arr) || arr.length === 0) return '';
                 if (arr.length === 1) return arr[0];
-                if (arr.length === 2) return `${arr[0]} & ${arr[1]}`;
-                return `${arr.slice(0, -1).join(', ')} & ${arr[arr.length - 1]}`;
+                if (arr.length === 2) return arr[0] + ' & ' + arr[1];
+                return arr.slice(0, -1).join(', ') + ' & ' + arr[arr.length - 1];
+            }
+
+            function mapSupToSign(sup) {
+                return sup === 'Balaji' ? 'N. Balaji' : sup;
             }
 
             function showToast(msg) {
-                const toast = document.getElementById('toast');
-                const toastMsg = document.getElementById('toastMsg');
-                if (!toast || !toastMsg) return;
-                toastMsg.textContent = msg;
-                toast.classList.remove('-translate-y-24', 'opacity-0');
-                toast.classList.add('translate-y-0', 'opacity-100');
+                var t = el('toast');
+                if (!t) return;
+                t.textContent = msg;
+                t.classList.add('show');
                 clearTimeout(toastTimer);
-                toastTimer = setTimeout(() => {
-                    toast.classList.add('-translate-y-24', 'opacity-0');
-                    toast.classList.remove('translate-y-0', 'opacity-100');
+                toastTimer = setTimeout(function () {
+                    t.classList.remove('show');
                 }, 2200);
             }
 
-            // --- Default State ---
+            /* =========================================================
+               STATE MANAGEMENT & SAFE LOCALSTORAGE
+               ========================================================= */
             function createDefaultState() {
                 return {
-                    reportStage: 'output', // 'start' | 'output'
+                    reportStage: 'start', // 'start' | 'output'
                     reportDate: getTodayISO(),
                     location: 'Pioneer',
-                    shift: '', // Blank by default
-                    // Line 1: Active by default
+                    shift: '',
+                    // Line 1
                     l1Active: true,
                     l1Dumping: 4,
                     l1Packing: 2,
@@ -740,10 +1318,10 @@
                     l1Output: '',
                     l1StartTime: '08:00',
                     l1EndTime: '20:00',
-                    l1RunHrs: '',
-                    l1RunMins: '',
+                    l1RunHrs: '0',
+                    l1RunMins: '0',
                     l1Remarks: [],
-                    // Line 2: No Production by default
+                    // Line 2
                     l2Active: false,
                     l2Dumping: 4,
                     l2Packing: 2,
@@ -752,37 +1330,54 @@
                     l2Output: '',
                     l2StartTime: '08:00',
                     l2EndTime: '20:00',
-                    l2RunHrs: '',
-                    l2RunMins: '',
+                    l2RunHrs: '0',
+                    l2RunMins: '0',
                     l2Remarks: [],
-                    // Total Output (Unchecked by default)
+                    // Total Output
                     showTotalOutput: false,
                     // Batching & Labelling
-                    batchingNil: false,
                     batchingText: '',
                     labellingText: '',
                     // Supervisors & QC
                     supervisors: [],
                     qcs: [],
                     // Leave
-                    allPresent: false,
                     leaveText: '',
-                    // Product & WO Cards
+                    // WOs
                     l1Wos: [],
                     l2Wos: [],
-                    // Sign-off
+                    // Sign-Off
                     signOffBubbles: [],
                     customSignOff: ''
                 };
             }
 
             function loadState() {
-                const defaults = createDefaultState();
+                var defaults = createDefaultState();
                 try {
-                    const raw = localStorage.getItem(STORAGE_KEY);
+                    var raw = localStorage.getItem(STORAGE_KEY);
+                    if (!raw) {
+                        for (var i = 0; i < LEGACY_KEYS.length; i++) {
+                            raw = localStorage.getItem(LEGACY_KEYS[i]);
+                            if (raw) break;
+                        }
+                    }
                     if (!raw) return defaults;
-                    const parsed = JSON.parse(raw);
-                    return Object.assign(defaults, parsed);
+                    var parsed = JSON.parse(raw);
+                    if (!parsed || typeof parsed !== 'object') return defaults;
+
+                    var merged = Object.assign({}, defaults, parsed);
+                    merged.location = 'Pioneer';
+                    if (!Array.isArray(merged.l1Remarks)) merged.l1Remarks = [];
+                    if (!Array.isArray(merged.l2Remarks)) merged.l2Remarks = [];
+                    if (!Array.isArray(merged.supervisors)) merged.supervisors = [];
+                    if (!Array.isArray(merged.qcs)) merged.qcs = [];
+                    if (!Array.isArray(merged.l1Wos)) merged.l1Wos = [];
+                    if (!Array.isArray(merged.l2Wos)) merged.l2Wos = [];
+                    if (!Array.isArray(merged.signOffBubbles)) merged.signOffBubbles = [];
+                    if (parsed.batchingNil && !merged.batchingText) merged.batchingText = 'NIL';
+                    if (parsed.allPresent && !merged.leaveText) merged.leaveText = 'All Present.';
+                    return merged;
                 } catch (e) {
                     return defaults;
                 }
@@ -792,139 +1387,148 @@
                 try {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
                 } catch (e) {
-                    // Ignore storage quota errors
+                    // Safely ignore storage errors
                 }
             }
 
-            // --- Sync Form Inputs from State ---
+            /* =========================================================
+               SYNC STATIC INPUTS (Only on init, shift change, or reset)
+               ========================================================= */
             function syncInputsFromState() {
-                document.getElementById('reportDate').value = state.reportDate || '';
+                if (el('reportDate')) el('reportDate').value = state.reportDate || '';
 
-                [1, 2].forEach(num => {
-                    document.getElementById(`l${num}Dumping`).value = state[`l${num}Dumping`];
-                    document.getElementById(`l${num}Packing`).value = state[`l${num}Packing`];
-                    document.getElementById(`l${num}Target`).value = state[`l${num}Target`];
-                    document.getElementById(`l${num}Output`).value = state[`l${num}Output`];
-                    document.getElementById(`l${num}StartTime`).value = state[`l${num}StartTime`];
-                    document.getElementById(`l${num}EndTime`).value = state[`l${num}EndTime`];
-                    document.getElementById(`l${num}RunHrs`).value = state[`l${num}RunHrs`];
-                    document.getElementById(`l${num}RunMins`).value = state[`l${num}RunMins`];
+                [1, 2].forEach(function (n) {
+                    if (el('l' + n + 'Dumping')) el('l' + n + 'Dumping').value = state['l' + n + 'Dumping'];
+                    if (el('l' + n + 'Packing')) el('l' + n + 'Packing').value = state['l' + n + 'Packing'];
+                    if (el('l' + n + 'Target')) el('l' + n + 'Target').value = state['l' + n + 'Target'];
+                    if (el('l' + n + 'Output')) el('l' + n + 'Output').value = state['l' + n + 'Output'];
+                    if (el('l' + n + 'StartTime')) el('l' + n + 'StartTime').value = state['l' + n + 'StartTime'];
+                    if (el('l' + n + 'EndTime')) el('l' + n + 'EndTime').value = state['l' + n + 'EndTime'];
+                    if (el('l' + n + 'RunHrs')) el('l' + n + 'RunHrs').value = state['l' + n + 'RunHrs'];
+                    if (el('l' + n + 'RunMins')) el('l' + n + 'RunMins').value = state['l' + n + 'RunMins'];
                 });
 
-                document.getElementById('showTotalOutput').checked = Boolean(state.showTotalOutput);
-                document.getElementById('batchingInput').value = state.batchingText || '';
-                const labEl = document.getElementById('labellingText');
-                labEl.value = state.labellingText || '';
-                autoResize(labEl);
+                if (el('showTotalOutput')) el('showTotalOutput').checked = Boolean(state.showTotalOutput);
+                if (el('batchingInput')) el('batchingInput').value = state.batchingText || '';
 
-                const leaveEl = document.getElementById('leaveText');
-                leaveEl.value = state.leaveText || '';
-                autoResize(leaveEl);
+                var lab = el('labellingInput');
+                if (lab) {
+                    lab.value = state.labellingText || '';
+                    autoResize(lab);
+                }
 
-                document.getElementById('customSignOff').value = state.customSignOff || '';
+                var lv = el('leaveInput');
+                if (lv) {
+                    lv.value = state.leaveText || '';
+                    autoResize(lv);
+                }
+
+                if (el('customSignOff')) el('customSignOff').value = state.customSignOff || '';
             }
 
-            // --- Render Dynamic Lists (Remarks & WOs) ---
+            /* =========================================================
+               DYNAMIC LISTS (Only re-rendered on add/remove/toggle/reset)
+               ========================================================= */
             function renderRemarksList(lineNum) {
-                const container = document.getElementById(`line${lineNum}RemarksList`);
-                const remarks = state[`l${lineNum}Remarks`] || [];
+                var container = el('l' + lineNum + 'RemarksList');
+                if (!container) return;
+                var list = state['l' + lineNum + 'Remarks'] || [];
                 container.innerHTML = '';
 
-                if (remarks.length === 0) {
-                    const emptyHint = document.createElement('p');
-                    emptyHint.className = 'text-xs text-slate-400 italic';
-                    emptyHint.textContent = 'No remarks added.';
-                    container.appendChild(emptyHint);
+                if (list.length === 0) {
+                    var p = document.createElement('p');
+                    p.className = 'empty-hint';
+                    p.textContent = 'No remarks added.';
+                    container.appendChild(p);
                     return;
                 }
 
-                remarks.forEach((text, idx) => {
-                    const row = document.createElement('div');
-                    row.className = 'flex items-start gap-2';
+                list.forEach(function (text, idx) {
+                    var row = document.createElement('div');
+                    row.className = 'remark-row';
 
-                    const badge = document.createElement('span');
-                    badge.className = 'mt-2.5 w-6 h-6 rounded-lg bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-600 flex items-center justify-center shrink-0';
-                    badge.textContent = `${idx + 1}.`;
+                    var num = document.createElement('span');
+                    num.className = 'remark-num';
+                    num.textContent = (idx + 1) + '.';
 
-                    const ta = document.createElement('textarea');
+                    var ta = document.createElement('textarea');
+                    ta.className = 'auto-expand';
                     ta.rows = 1;
-                    ta.className = 'auto-expand flex-1 px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none';
-                    ta.placeholder = `Enter remark ${idx + 1}...`;
+                    ta.placeholder = 'Enter remark ' + (idx + 1) + '...';
                     ta.value = text;
-                    ta.addEventListener('input', () => {
-                        state[`l${lineNum}Remarks`][idx] = ta.value;
+                    ta.addEventListener('input', function () {
+                        state['l' + lineNum + 'Remarks'][idx] = ta.value;
                         autoResize(ta);
                         persistState();
                         renderPreview();
                     });
 
-                    const delBtn = document.createElement('button');
-                    delBtn.type = 'button';
-                    delBtn.className = 'mt-1.5 p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition shrink-0';
-                    delBtn.setAttribute('aria-label', 'Remove remark');
-                    delBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-                    delBtn.addEventListener('click', () => {
-                        state[`l${lineNum}Remarks`].splice(idx, 1);
+                    var rmBtn = document.createElement('button');
+                    rmBtn.type = 'button';
+                    rmBtn.className = 'btn-icon-remove';
+                    rmBtn.textContent = '×';
+                    rmBtn.setAttribute('aria-label', 'Remove remark');
+                    rmBtn.addEventListener('click', function () {
+                        state['l' + lineNum + 'Remarks'].splice(idx, 1);
                         renderRemarksList(lineNum);
                         persistState();
                         renderPreview();
                     });
 
-                    row.appendChild(badge);
+                    row.appendChild(num);
                     row.appendChild(ta);
-                    row.appendChild(delBtn);
+                    row.appendChild(rmBtn);
                     container.appendChild(row);
                     autoResize(ta);
                 });
             }
 
             function renderWoList(lineNum) {
-                const container = document.getElementById(`l${lineNum}WoList`);
-                const wos = state[`l${lineNum}Wos`] || [];
+                var container = el('l' + lineNum + 'WoList');
+                if (!container) return;
+                var wos = state['l' + lineNum + 'Wos'] || [];
                 container.innerHTML = '';
 
                 if (wos.length === 0) {
-                    const emptyHint = document.createElement('p');
-                    emptyHint.className = 'text-xs text-slate-400 italic py-2';
-                    emptyHint.textContent = `No Work Orders added for Line ${lineNum}. Tap "+ Add WO" above.`;
-                    container.appendChild(emptyHint);
+                    var p = document.createElement('p');
+                    p.className = 'empty-hint';
+                    p.textContent = 'No Work Orders added for Line ' + lineNum + '.';
+                    container.appendChild(p);
                     return;
                 }
 
-                wos.forEach((item, idx) => {
-                    const card = document.createElement('div');
-                    card.className = 'p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5';
+                wos.forEach(function (item, idx) {
+                    var card = document.createElement('div');
+                    card.className = 'wo-card';
 
-                    const topBar = document.createElement('div');
-                    topBar.className = 'flex items-center justify-between gap-2';
+                    var top = document.createElement('div');
+                    top.className = 'wo-card-top';
 
-                    const label = document.createElement('span');
-                    label.className = 'text-xs font-extrabold text-slate-500 uppercase';
-                    label.textContent = `Line ${lineNum} — WO #${idx + 1}`;
+                    var title = document.createElement('span');
+                    title.className = 'field-label';
+                    title.textContent = 'Line ' + lineNum + ' • WO #' + (idx + 1);
 
-                    const actions = document.createElement('div');
-                    actions.className = 'flex items-center gap-2';
+                    var actions = document.createElement('div');
+                    actions.className = 'wo-actions';
 
-                    const compBtn = document.createElement('button');
+                    var compBtn = document.createElement('button');
                     compBtn.type = 'button';
-                    compBtn.className = item.completed
-                        ? 'px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-sm transition'
-                        : 'px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition';
-                    compBtn.textContent = item.completed ? '✓ Completed' : 'Mark Completed';
-                    compBtn.addEventListener('click', () => {
-                        state[`l${lineNum}Wos`][idx].completed = !state[`l${lineNum}Wos`][idx].completed;
+                    compBtn.className = item.completed ? 'btn-small active-green' : 'btn-small';
+                    compBtn.textContent = item.completed ? '✓ Completed' : 'Completed';
+                    compBtn.addEventListener('click', function () {
+                        state['l' + lineNum + 'Wos'][idx].completed = !state['l' + lineNum + 'Wos'][idx].completed;
                         renderWoList(lineNum);
                         persistState();
                         renderPreview();
                     });
 
-                    const rmBtn = document.createElement('button');
+                    var rmBtn = document.createElement('button');
                     rmBtn.type = 'button';
-                    rmBtn.className = 'p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition';
+                    rmBtn.className = 'btn-icon-remove';
+                    rmBtn.textContent = '×';
                     rmBtn.setAttribute('aria-label', 'Remove WO');
-                    rmBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-                    rmBtn.addEventListener('click', () => {
-                        state[`l${lineNum}Wos`].splice(idx, 1);
+                    rmBtn.addEventListener('click', function () {
+                        state['l' + lineNum + 'Wos'].splice(idx, 1);
                         renderWoList(lineNum);
                         persistState();
                         renderPreview();
@@ -932,375 +1536,353 @@
 
                     actions.appendChild(compBtn);
                     actions.appendChild(rmBtn);
-                    topBar.appendChild(label);
-                    topBar.appendChild(actions);
+                    top.appendChild(title);
+                    top.appendChild(actions);
 
-                    const inputsGrid = document.createElement('div');
-                    inputsGrid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-2.5';
+                    var grid = document.createElement('div');
+                    grid.className = 'grid-2';
 
-                    const nameInput = document.createElement('input');
-                    nameInput.type = 'text';
-                    nameInput.placeholder = 'Product Name (e.g. Plain Bag GL WPC)';
-                    nameInput.value = item.name || '';
-                    nameInput.className = 'w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none';
-                    nameInput.addEventListener('input', () => {
-                        state[`l${lineNum}Wos`][idx].name = nameInput.value;
+                    var nameIn = document.createElement('input');
+                    nameIn.type = 'text';
+                    nameIn.placeholder = 'Product Name (e.g. Plain Bag GL WPC)';
+                    nameIn.value = item.name || '';
+                    nameIn.addEventListener('input', function () {
+                        state['l' + lineNum + 'Wos'][idx].name = nameIn.value;
                         persistState();
                         renderPreview();
                     });
 
-                    const woInput = document.createElement('input');
-                    woInput.type = 'text';
-                    woInput.placeholder = 'WO Number (e.g. PRD26-0759)';
-                    woInput.value = item.wo || '';
-                    woInput.className = 'w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none';
-                    woInput.addEventListener('input', () => {
-                        state[`l${lineNum}Wos`][idx].wo = woInput.value;
+                    var woIn = document.createElement('input');
+                    woIn.type = 'text';
+                    woIn.className = 'mono';
+                    woIn.placeholder = 'WO: (e.g. PRD26-0759)';
+                    woIn.value = item.wo || '';
+                    woIn.addEventListener('input', function () {
+                        state['l' + lineNum + 'Wos'][idx].wo = woIn.value;
                         persistState();
                         renderPreview();
                     });
 
-                    inputsGrid.appendChild(nameInput);
-                    inputsGrid.appendChild(woInput);
-
-                    card.appendChild(topBar);
-                    card.appendChild(inputsGrid);
+                    grid.appendChild(nameIn);
+                    grid.appendChild(woIn);
+                    card.appendChild(top);
+                    card.appendChild(grid);
                     container.appendChild(card);
                 });
             }
 
-            // --- Update Visual UI States (Bubbles, Toggles, Calculated Displays) ---
-            function updateUIState() {
-                // Location Bubbles
-                document.querySelectorAll('.loc-btn').forEach(btn => {
-                    const active = btn.dataset.location === state.location;
-                    btn.className = active
-                        ? 'loc-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'loc-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100';
+            /* =========================================================
+               UI CALCULATIONS & BUTTON STATES
+               ========================================================= */
+            function updateCalculatedUI() {
+                // Shift bubbles
+                document.querySelectorAll('.shift-pill').forEach(function (btn) {
+                    if (btn.getAttribute('data-shift') === state.shift) {
+                        btn.classList.add('selected-dark');
+                    } else {
+                        btn.classList.remove('selected-dark');
+                    }
                 });
 
-                // Shift Bubbles
-                document.querySelectorAll('.shift-btn').forEach(btn => {
-                    const active = btn.dataset.shift === state.shift;
-                    btn.className = active
-                        ? 'shift-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center bg-slate-900 text-white border-slate-900 shadow-sm'
-                        : 'shift-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100';
-                });
+                var combinedOutput = 0;
 
-                // Line 1 & Line 2 Controls & Live Calculations
-                let combinedOutput = 0;
+                [1, 2].forEach(function (n) {
+                    var isActive = Boolean(state['l' + n + 'Active']);
+                    var actBtn = el('l' + n + 'ActiveBtn');
+                    var inactBtn = el('l' + n + 'InactiveBtn');
+                    var fields = el('l' + n + 'Fields');
 
-                [1, 2].forEach(num => {
-                    const isActive = state[`l${num}Active`];
-                    const actBtn = document.getElementById(`l${num}ActiveBtn`);
-                    const inactBtn = document.getElementById(`l${num}InactiveBtn`);
-                    const fields = document.getElementById(`line${num}Fields`);
-
-                    if (isActive) {
-                        actBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition bg-emerald-600 text-white shadow-sm';
-                        inactBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
-                        fields.classList.remove('hidden');
-                    } else {
-                        inactBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition bg-slate-700 text-white shadow-sm';
-                        actBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
-                        fields.classList.add('hidden');
+                    if (actBtn && inactBtn && fields) {
+                        actBtn.className = isActive ? 'pill-btn active-green' : 'pill-btn';
+                        inactBtn.className = !isActive ? 'pill-btn active-slate' : 'pill-btn';
+                        if (isActive) {
+                            fields.classList.remove('hidden');
+                        } else {
+                            fields.classList.add('hidden');
+                        }
                     }
 
-                    // Operators Sum
-                    const dump = parseInt(state[`l${num}Dumping`], 10) || 0;
-                    const pack = parseInt(state[`l${num}Packing`], 10) || 0;
-                    document.getElementById(`l${num}TotalOpsDisplay`).textContent = pad2(dump + pack);
-
-                    // Output Mode Bar
-                    const mode = state[`l${num}OutputMode`];
-                    const curBtn = document.getElementById(`l${num}ModeCurrent`);
-                    const finBtn = document.getElementById(`l${num}ModeFinal`);
-                    const outLabel = document.getElementById(`l${num}OutputLabel`);
-
-                    if (mode === 'Current') {
-                        curBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition bg-blue-600 text-white shadow-sm';
-                        finBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
-                        outLabel.textContent = 'Current Output (MT)';
-                    } else {
-                        finBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition bg-emerald-600 text-white shadow-sm';
-                        curBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
-                        outLabel.textContent = 'Final Output (MT)';
+                    // Operators
+                    var dump = parseInt(state['l' + n + 'Dumping'], 10) || 0;
+                    var pack = parseInt(state['l' + n + 'Packing'], 10) || 0;
+                    if (el('l' + n + 'TotalOps')) {
+                        el('l' + n + 'TotalOps').textContent = pad2(dump + pack);
                     }
 
-                    // Variance & Efficiency
-                    const target = parseFloat(state[`l${num}Target`]) || 0;
-                    const output = parseFloat(state[`l${num}Output`]) || 0;
+                    // Output Mode
+                    var mode = state['l' + n + 'OutputMode'] || 'Current';
+                    if (el('l' + n + 'ModeCurrent')) {
+                        el('l' + n + 'ModeCurrent').className = mode === 'Current' ? 'pill-btn active-blue' : 'pill-btn';
+                    }
+                    if (el('l' + n + 'ModeFinal')) {
+                        el('l' + n + 'ModeFinal').className = mode === 'Final' ? 'pill-btn active-green' : 'pill-btn';
+                    }
+                    if (el('l' + n + 'OutputLabel')) {
+                        el('l' + n + 'OutputLabel').textContent = mode + ' (MT)';
+                    }
+
+                    // Variance
+                    var target = parseFloat(state['l' + n + 'Target']) || 0;
+                    var output = parseFloat(state['l' + n + 'Output']) || 0;
                     if (isActive) combinedOutput += output;
 
-                    const varLabelEl = document.getElementById(`l${num}VarianceLabel`);
-                    const varDispEl = document.getElementById(`l${num}VarianceDisplay`);
-
-                    if (output > target) {
-                        varLabelEl.textContent = 'Gain Output (MT)';
-                        varLabelEl.className = 'block text-xs font-bold text-emerald-700 mb-1';
-                        varDispEl.textContent = (output - target).toFixed(3);
-                    } else if (mode === 'Final') {
-                        varLabelEl.textContent = 'Loss Output (MT)';
-                        varLabelEl.className = 'block text-xs font-bold text-rose-600 mb-1';
-                        varDispEl.textContent = (target - output).toFixed(3);
-                    } else {
-                        varLabelEl.textContent = 'Balance Output (MT)';
-                        varLabelEl.className = 'block text-xs font-bold text-slate-500 mb-1';
-                        varDispEl.textContent = (target - output).toFixed(3);
+                    var vLabel = el('l' + n + 'VarianceLabel');
+                    var vDisp = el('l' + n + 'VarianceDisplay');
+                    if (vLabel && vDisp) {
+                        if (output > target) {
+                            vLabel.textContent = 'Gain (MT)';
+                            vLabel.className = 'field-label accent';
+                            vDisp.textContent = (output - target).toFixed(3);
+                        } else if (mode === 'Final') {
+                            vLabel.textContent = 'Loss (MT)';
+                            vLabel.className = 'field-label danger';
+                            vDisp.textContent = (target - output).toFixed(3);
+                        } else {
+                            vLabel.textContent = 'Balance (MT)';
+                            vLabel.className = 'field-label';
+                            vDisp.textContent = (target - output).toFixed(3);
+                        }
                     }
 
-                    // Operating Duration
-                    document.getElementById(`l${num}OpDurationDisplay`).textContent =
-                        calcOperatingDuration(state[`l${num}StartTime`], state[`l${num}EndTime`]) || '--';
+                    // Duration
+                    if (el('l' + n + 'OpDuration')) {
+                        el('l' + n + 'OpDuration').textContent = calcOperatingDuration(state['l' + n + 'StartTime'], state['l' + n + 'EndTime']) || '--';
+                    }
 
                     // Efficiency
-                    const runHrs = parseFloat(state[`l${num}RunHrs`]) || 0;
-                    const runMins = parseFloat(state[`l${num}RunMins`]) || 0;
-                    const totalRunHours = runHrs + (runMins / 60);
-                    const eff = totalRunHours > 0 ? (output / totalRunHours) : 0;
-                    document.getElementById(`l${num}EfficiencyDisplay`).textContent = eff.toFixed(3);
+                    var rH = parseFloat(state['l' + n + 'RunHrs']) || 0;
+                    var rM = parseFloat(state['l' + n + 'RunMins']) || 0;
+                    var totalH = rH + (rM / 60);
+                    var eff = totalH > 0 ? (output / totalH) : 0;
+                    if (el('l' + n + 'Efficiency')) {
+                        el('l' + n + 'Efficiency').textContent = eff.toFixed(3);
+                    }
                 });
 
-                document.getElementById('totalOutputBadge').textContent = combinedOutput.toFixed(3);
-
-                // Batching NIL button
-                const nilBtn = document.getElementById('batchingNilBtn');
-                const batchInput = document.getElementById('batchingInput');
-                if (state.batchingNil) {
-                    nilBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold border transition bg-slate-900 text-white border-slate-900';
-                    batchInput.disabled = true;
-                    batchInput.classList.add('opacity-50', 'cursor-not-allowed');
-                } else {
-                    nilBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold border transition bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200';
-                    batchInput.disabled = false;
-                    batchInput.classList.remove('opacity-50', 'cursor-not-allowed');
+                if (el('totalOutputBadge')) {
+                    el('totalOutputBadge').textContent = combinedOutput.toFixed(3);
                 }
 
-                // Supervisors Bubbles
-                document.querySelectorAll('.sup-btn').forEach(btn => {
-                    const selected = state.supervisors.includes(btn.dataset.sup);
-                    btn.className = selected
-                        ? 'sup-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                        : 'sup-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100';
+                // Batching NIL button state
+                var nilBtn = el('batchingNilBtn');
+                if (nilBtn) {
+                    var isNil = (state.batchingText || '').trim().toUpperCase() === 'NIL';
+                    nilBtn.className = isNil ? 'btn-small active-dark' : 'btn-small';
+                }
+
+                // Supervisors
+                document.querySelectorAll('.sup-btn').forEach(function (btn) {
+                    var name = btn.getAttribute('data-sup');
+                    if (state.supervisors.indexOf(name) !== -1) {
+                        btn.classList.add('selected-indigo');
+                    } else {
+                        btn.classList.remove('selected-indigo');
+                    }
                 });
 
-                // QC Bubbles
-                document.querySelectorAll('.qc-btn').forEach(btn => {
-                    const selected = state.qcs.includes(btn.dataset.qc);
-                    btn.className = selected
-                        ? 'qc-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition bg-teal-600 text-white border-teal-600 shadow-sm'
-                        : 'qc-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100';
+                // QC
+                document.querySelectorAll('.qc-btn').forEach(function (btn) {
+                    var name = btn.getAttribute('data-qc');
+                    if (state.qcs.indexOf(name) !== -1) {
+                        btn.classList.add('selected-teal');
+                    } else {
+                        btn.classList.remove('selected-teal');
+                    }
                 });
 
-                // Leave All Present Toggle
-                const allPresBtn = document.getElementById('allPresentBtn');
-                const allPresBanner = document.getElementById('allPresentBanner');
-                const leaveWrap = document.getElementById('leaveTextWrap');
-                if (state.allPresent) {
-                    allPresBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold border transition bg-emerald-600 text-white border-emerald-600 shadow-sm';
-                    allPresBanner.classList.remove('hidden');
-                    leaveWrap.classList.add('hidden');
-                } else {
-                    allPresBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100';
-                    allPresBanner.classList.add('hidden');
-                    leaveWrap.classList.remove('hidden');
+                // Leave All Present highlight
+                var allPresBtn = el('allPresentBtn');
+                if (allPresBtn) {
+                    var isAllP = (state.leaveText || '').trim().toLowerCase() === 'all present.';
+                    allPresBtn.className = isAllP ? 'btn-small active-green' : 'btn-small';
                 }
 
                 // WO Tabs
-                const woTab1 = document.getElementById('woTabL1Btn');
-                const woTab2 = document.getElementById('woTabL2Btn');
-                const woPanel1 = document.getElementById('woPanelL1');
-                const woPanel2 = document.getElementById('woPanelL2');
-                if (activeWoTab === 1) {
-                    woTab1.className = 'px-3 py-1 rounded-lg text-xs font-bold transition bg-cyan-600 text-white shadow-sm';
-                    woTab2.className = 'px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
-                    woPanel1.classList.remove('hidden');
-                    woPanel2.classList.add('hidden');
-                } else {
-                    woTab2.className = 'px-3 py-1 rounded-lg text-xs font-bold transition bg-cyan-600 text-white shadow-sm';
-                    woTab1.className = 'px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
-                    woPanel2.classList.remove('hidden');
-                    woPanel1.classList.add('hidden');
+                if (el('woTab1Btn') && el('woTab2Btn') && el('woPanel1') && el('woPanel2')) {
+                    el('woTab1Btn').className = activeWoTab === 1 ? 'pill-btn active-cyan' : 'pill-btn';
+                    el('woTab2Btn').className = activeWoTab === 2 ? 'pill-btn active-cyan' : 'pill-btn';
+                    if (activeWoTab === 1) {
+                        el('woPanel1').classList.remove('hidden');
+                        el('woPanel2').classList.add('hidden');
+                    } else {
+                        el('woPanel2').classList.remove('hidden');
+                        el('woPanel1').classList.add('hidden');
+                    }
                 }
 
                 // Sign-off Bubbles
-                document.querySelectorAll('.sign-btn').forEach(btn => {
-                    const selected = state.signOffBubbles.includes(btn.dataset.sign);
-                    btn.className = selected
-                        ? 'sign-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition bg-slate-900 text-white border-slate-900 shadow-sm'
-                        : 'sign-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100';
+                document.querySelectorAll('.sign-btn').forEach(function (btn) {
+                    var name = btn.getAttribute('data-sign');
+                    if (state.signOffBubbles.indexOf(name) !== -1) {
+                        btn.classList.add('selected-dark');
+                    } else {
+                        btn.classList.remove('selected-dark');
+                    }
                 });
 
-                // Preview Stage Switcher
-                const stageStartBtn = document.getElementById('stageStartBtn');
-                const stageOutputBtn = document.getElementById('stageOutputBtn');
-                if (state.reportStage === 'start') {
-                    stageStartBtn.className = 'py-2.5 px-3 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 bg-emerald-500 text-slate-950 shadow-sm';
-                    stageOutputBtn.className = 'py-2.5 px-3 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 bg-slate-800 text-slate-300 hover:text-white';
-                } else {
-                    stageOutputBtn.className = 'py-2.5 px-3 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 bg-emerald-500 text-slate-950 shadow-sm';
-                    stageStartBtn.className = 'py-2.5 px-3 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 bg-slate-800 text-slate-300 hover:text-white';
+                // Stage Switcher
+                if (el('stageStartBtn') && el('stageOutputBtn')) {
+                    el('stageStartBtn').className = state.reportStage === 'start' ? 'stage-btn active' : 'stage-btn';
+                    el('stageOutputBtn').className = state.reportStage === 'output' ? 'stage-btn active' : 'stage-btn';
                 }
             }
 
-            // --- Build WhatsApp Formatted Message ---
+            /* =========================================================
+               WHATSAPP MESSAGE GENERATOR
+               ========================================================= */
             function buildWhatsAppMessage() {
-                const isStart = state.reportStage === 'start';
-                const lines = [];
+                var isStart = state.reportStage === 'start';
+                var lines = [];
 
-                // 1. Bold Greeting
                 lines.push('*Dear Sirs & Ms.Priya,*');
                 lines.push('');
 
-                // 2. Date, Location & Shift
-                const dateStr = formatDateDDMMYYYY(state.reportDate);
-                const shiftStr = state.shift ? `${state.shift} Shift:` : 'Shift:';
-                lines.push(`${dateStr} ${state.location} ${shiftStr}`.trim());
+                var dateStr = formatDateDDMMYYYY(state.reportDate);
+                var shiftPart = state.shift ? (state.shift + ' Shift:') : 'Shift:';
+                lines.push((dateStr + ' Pioneer ' + shiftPart).trim());
                 lines.push('');
 
-                // Helper to format each line section
-                let totalOutputSum = 0;
+                var totalOutputSum = 0;
 
-                [1, 2].forEach(num => {
-                    const isActive = state[`l${num}Active`];
-                    const remarks = (state[`l${num}Remarks`] || []).map(r => r.trim()).filter(Boolean);
+                [1, 2].forEach(function (n) {
+                    var isActive = Boolean(state['l' + n + 'Active']);
+                    var remarks = (state['l' + n + 'Remarks'] || [])
+                        .map(function (r) { return String(r || '').trim(); })
+                        .filter(Boolean);
 
                     if (!isActive) {
-                        lines.push(`Line-${num}: No Production`);
+                        lines.push('*Line-' + n + ':* No Production');
                         if (remarks.length > 0) {
                             lines.push('Remark:');
-                            remarks.forEach((r, i) => lines.push(`${i + 1}. ${r}`));
+                            remarks.forEach(function (r, idx) {
+                                lines.push((idx + 1) + '. ' + r);
+                            });
                         }
                         lines.push('');
                         return;
                     }
 
-                    const dump = parseInt(state[`l${num}Dumping`], 10) || 0;
-                    const pack = parseInt(state[`l${num}Packing`], 10) || 0;
-                    const totalOps = dump + pack;
-
-                    lines.push(`Line-${num}: ${pad2(totalOps)} Operators`);
-                    lines.push(`Dumping: ${pad2(dump)} Operators`);
-                    lines.push(`Packing: ${pad2(pack)} Operators`);
+                    var dump = parseInt(state['l' + n + 'Dumping'], 10) || 0;
+                    var pack = parseInt(state['l' + n + 'Packing'], 10) || 0;
+                    lines.push('*Line-' + n + ':* ' + pad2(dump + pack) + ' Operators');
+                    lines.push('Dumping: ' + pad2(dump) + ' Operators');
+                    lines.push('Packing: ' + pad2(pack) + ' Operators');
                     lines.push('');
 
                     if (!isStart) {
-                        const target = parseFloat(state[`l${num}Target`]) || 0;
-                        const output = parseFloat(state[`l${num}Output`]) || 0;
-                        const mode = state[`l${num}OutputMode`];
+                        var target = parseFloat(state['l' + n + 'Target']) || 0;
+                        var output = parseFloat(state['l' + n + 'Output']) || 0;
+                        var mode = state['l' + n + 'OutputMode'] || 'Current';
                         totalOutputSum += output;
 
-                        lines.push(`Target Output: ${target.toFixed(3)}MT`);
-                        lines.push(`*${mode} Output: ${output.toFixed(3)}MT*`);
+                        lines.push('Target Output: ' + target.toFixed(3) + 'MT');
+                        lines.push('*' + mode + ' Output: ' + output.toFixed(3) + 'MT*');
 
                         if (output > target) {
-                            lines.push(`Gain Output: ${(output - target).toFixed(3)}MT`);
+                            lines.push('Gain Output: ' + (output - target).toFixed(3) + 'MT');
                         } else if (mode === 'Final') {
-                            lines.push(`Loss Output: ${(target - output).toFixed(3)}MT`);
+                            lines.push('Loss Output: ' + (target - output).toFixed(3) + 'MT');
                         } else {
-                            lines.push(`Balance Output: ${(target - output).toFixed(3)}MT`);
+                            lines.push('Balance Output: ' + (target - output).toFixed(3) + 'MT');
                         }
                         lines.push('');
 
-                        const start12 = formatTime12h(state[`l${num}StartTime`]);
-                        const end12 = formatTime12h(state[`l${num}EndTime`]);
-                        const dur = calcOperatingDuration(state[`l${num}StartTime`], state[`l${num}EndTime`]);
-                        lines.push(`Operating Hours: ${start12}-${end12} (${dur})`);
+                        var s12 = formatTime12h(state['l' + n + 'StartTime']);
+                        var e12 = formatTime12h(state['l' + n + 'EndTime']);
+                        var dur = calcOperatingDuration(state['l' + n + 'StartTime'], state['l' + n + 'EndTime']);
+                        lines.push('Operating Hours: ' + s12 + '-' + e12 + (dur ? ' (' + dur + ')' : ''));
 
-                        const runHrs = parseFloat(state[`l${num}RunHrs`]) || 0;
-                        const runMins = parseFloat(state[`l${num}RunMins`]) || 0;
-                        const totalRun = runHrs + (runMins / 60);
-                        const eff = totalRun > 0 ? (output / totalRun) : 0;
+                        var rH = parseFloat(state['l' + n + 'RunHrs']) || 0;
+                        var rM = parseFloat(state['l' + n + 'RunMins']) || 0;
+                        var totalH = rH + (rM / 60);
+                        var eff = totalH > 0 ? (output / totalH) : 0;
 
-                        lines.push(`Prod. Running Hrs: ${formatRunningHrs(runHrs, runMins)}`);
-                        lines.push(`*Efficiency: ${eff.toFixed(3)}MT/hr*`);
+                        lines.push('Prod. Running Hrs: ' + formatRunningHrs(rH, rM));
+                        lines.push('*Efficiency: ' + eff.toFixed(3) + 'MT/hr*');
                         lines.push('');
                     }
 
                     if (remarks.length > 0) {
                         if (isStart && remarks.length === 1) {
-                            lines.push(`Remark: ${remarks[0]}`);
+                            lines.push('Remark: ' + remarks[0]);
                         } else {
                             lines.push('Remark:');
-                            remarks.forEach((r, i) => lines.push(`${i + 1}. ${r}`));
+                            remarks.forEach(function (r, idx) {
+                                lines.push((idx + 1) + '. ' + r);
+                            });
                         }
                         lines.push('');
                     }
                 });
 
-                // Total Output (right after Line 2, only when checked and in Interval / Final mode)
+                // Total Output right after Line-2 (only if checked & in Interval/Final mode)
                 if (!isStart && state.showTotalOutput) {
-                    lines.push(`*Total output = ${totalOutputSum.toFixed(3)}MT*`);
+                    lines.push('*Total output = ' + totalOutputSum.toFixed(3) + 'MT*');
                     lines.push('');
                 }
 
                 // Batching
-                if (state.batchingNil) {
-                    lines.push('Batching: NIL');
+                var bText = (state.batchingText || '').trim();
+                if (/^\d+$/.test(bText)) {
+                    lines.push('Batching: ' + pad2(bText) + ' Operators');
+                } else if (bText) {
+                    lines.push('Batching: ' + bText);
                 } else {
-                    const bText = (state.batchingText || '').trim();
-                    if (/^\d+$/.test(bText)) {
-                        lines.push(`Batching: ${pad2(bText)} Operators`);
-                    } else {
-                        lines.push(`Batching: ${bText || 'NIL'}`);
-                    }
+                    lines.push('Batching: NIL');
                 }
                 lines.push('');
 
-                // Labelling
-                const lab = (state.labellingText || '').trim();
+                // Labelling (only if filled)
+                var lab = (state.labellingText || '').trim();
                 if (lab) {
-                    lines.push(`Labelling: ${lab}`);
+                    lines.push('Labelling: ' + lab);
                     lines.push('');
                 }
 
                 // Production Supervisor & QC
-                const supStr = formatNameList(state.supervisors);
-                const qcStr = formatNameList(state.qcs);
-                let supQcLine = '';
-                if (supStr && qcStr) {
-                    supQcLine = `${supStr} ; ${qcStr}`;
-                } else if (supStr) {
-                    supQcLine = supStr;
-                } else if (qcStr) {
-                    supQcLine = qcStr;
-                }
+                var supStr = formatNameList(state.supervisors);
+                var qcStr = formatNameList(state.qcs);
+                var supQc = '';
+                if (supStr && qcStr) supQc = supStr + ' ; ' + qcStr;
+                else if (supStr) supQc = supStr;
+                else if (qcStr) supQc = qcStr;
+
                 lines.push('Production Supervisor & QC:');
-                if (supQcLine) lines.push(supQcLine);
+                if (supQc) lines.push(supQc);
                 lines.push('');
 
                 // Leave
-                if (state.allPresent) {
-                    lines.push('Leave: All Present.');
+                var lv = (state.leaveText || '').trim();
+                if (!lv) {
+                    lines.push('Leave:');
+                } else if (lv.indexOf('\n') === -1) {
+                    lines.push('Leave: ' + lv);
                 } else {
-                    const lv = (state.leaveText || '').trim();
-                    if (lv) {
-                        lines.push('Leave:');
-                        lines.push(lv);
-                    } else {
-                        lines.push('Leave: All Present.');
-                    }
+                    lines.push('Leave:');
+                    lines.push(lv);
                 }
                 lines.push('');
 
                 // Product & WO Details
-                [1, 2].forEach(num => {
-                    const validWos = (state[`l${num}Wos`] || []).filter(w => (w.name || '').trim() || (w.wo || '').trim());
-                    if (validWos.length === 0) return;
+                [1, 2].forEach(function (n) {
+                    var valid = (state['l' + n + 'Wos'] || []).filter(function (w) {
+                        return (w.name || '').trim() || (w.wo || '').trim();
+                    });
+                    if (valid.length === 0) return;
 
-                    lines.push(`*Line ${num}:*`);
-                    validWos.forEach((w, idx) => {
-                        const prefix = validWos.length > 1 ? `${idx + 1}. ` : '';
+                    lines.push('*Line ' + n + ':*');
+                    valid.forEach(function (w, idx) {
+                        var prefix = valid.length > 1 ? ((idx + 1) + '. ') : '';
                         if ((w.name || '').trim()) {
-                            lines.push(`${prefix}${w.name.trim()}`);
+                            lines.push(prefix + w.name.trim());
                         }
                         if ((w.wo || '').trim()) {
-                            lines.push(`WO: ${w.wo.trim()}`);
+                            lines.push('WO: ' + w.wo.trim());
                         }
                         if (w.completed) {
                             lines.push('(Completed)');
                         }
-                        if (idx < validWos.length - 1) {
+                        if (idx < valid.length - 1) {
                             lines.push('');
                         }
                     });
@@ -1309,313 +1891,380 @@
 
                 // Sign-off
                 lines.push('Thank you Sirs,');
-                const customSign = (state.customSignOff || '').trim();
-                const signName = customSign || formatNameList(state.signOffBubbles);
-                if (signName) {
-                    lines.push(signName);
+                var customSign = (state.customSignOff || '').trim();
+                var sender = customSign || formatNameList(state.signOffBubbles);
+                if (sender) {
+                    lines.push(sender);
                 }
 
-                return lines.join('\n').trim();
+                return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
             }
 
             function renderPreview() {
-                const rawMsg = buildWhatsAppMessage();
-                document.getElementById('rawOutputText').value = rawMsg;
-
-                // Convert WhatsApp *bold* to <strong> for realistic preview
-                const safeHtml = escapeHtml(rawMsg).replace(/\*([^\*\n]+)\*/g, '<strong class="font-bold text-slate-950">$1</strong>');
-                document.getElementById('whatsappPreviewRendered').innerHTML = safeHtml;
-
-                const now = new Date();
-                document.getElementById('previewTimestamp').textContent =
-                    `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                var box = el('waPreviewBox');
+                if (!box) return;
+                var msg = buildWhatsAppMessage();
+                box.textContent = msg;
             }
 
-            function saveAndRender() {
+            function saveAndRefresh() {
                 persistState();
-                updateUIState();
+                updateCalculatedUI();
                 renderPreview();
             }
 
-            // --- Clipboard & WhatsApp Share ---
-            function copyReport() {
-                const rawEl = document.getElementById('rawOutputText');
-                rawEl.classList.remove('sr-only');
-                rawEl.style.position = 'fixed';
-                rawEl.style.left = '-9999px';
-                rawEl.select();
-                rawEl.setSelectionRange(0, 99999);
-                try {
-                    document.execCommand('copy');
-                    showToast('Report copied for WhatsApp!');
-                } catch (e) {
-                    showToast('Copy failed — please select text manually.');
-                }
-                rawEl.classList.add('sr-only');
-                rawEl.style.position = '';
-                rawEl.style.left = '';
-            }
-
-            function openWhatsApp() {
-                const rawMsg = document.getElementById('rawOutputText').value;
-                const url = `https://wa.me/?text=${encodeURIComponent(rawMsg)}`;
-                window.open(url, '_blank', 'noopener,noreferrer');
-            }
-
-            // --- Shift & Line Default Remark Helpers ---
-            function applyDefaultRemarkForLine(lineNum) {
-                const isActive = state[`l${lineNum}Active`];
-                const defaultRegex = new RegExp(`^Line ${lineNum} starts at 0800(am|pm)\\.$`);
+            /* =========================================================
+               SHIFT & DEFAULT REMARK HELPERS
+               ========================================================= */
+            function updateLineDefaultRemark(lineNum) {
+                var isActive = Boolean(state['l' + lineNum + 'Active']);
+                var defaultRegex = new RegExp('^Line ' + lineNum + ' starts at 0800(am|pm)\\.$');
 
                 if (!isActive) {
-                    // Remove default start remark when set to No Production
-                    state[`l${lineNum}Remarks`] = (state[`l${lineNum}Remarks`] || []).filter(r => !defaultRegex.test(r.trim()));
+                    state['l' + lineNum + 'Remarks'] = (state['l' + lineNum + 'Remarks'] || []).filter(function (r) {
+                        return !defaultRegex.test(String(r || '').trim());
+                    });
                 } else if (state.shift) {
-                    const timeTag = state.shift === 'Night' ? '0800pm' : '0800am';
-                    const targetText = `Line ${lineNum} starts at ${timeTag}.`;
-                    const remarks = state[`l${lineNum}Remarks`] || [];
+                    var timeTag = state.shift === 'Night' ? '0800pm' : '0800am';
+                    var targetText = 'Line ' + lineNum + ' starts at ' + timeTag + '.';
+                    var remarks = state['l' + lineNum + 'Remarks'] || [];
                     if (remarks.length === 0) {
-                        state[`l${lineNum}Remarks`] = [targetText];
-                    } else if (defaultRegex.test(remarks[0].trim())) {
-                        state[`l${lineNum}Remarks`][0] = targetText;
+                        state['l' + lineNum + 'Remarks'] = [targetText];
+                    } else if (defaultRegex.test(String(remarks[0] || '').trim())) {
+                        state['l' + lineNum + 'Remarks'][0] = targetText;
                     }
                 }
                 renderRemarksList(lineNum);
             }
 
-            // --- Bind All Event Listeners ---
+            /* =========================================================
+               CLIPBOARD COPY (No Scroll Jump, No Mobile Keyboard)
+               ========================================================= */
+            function fallbackCopy(text) {
+                var savedScrollY = window.scrollY || window.pageYOffset || 0;
+                var temp = document.createElement('textarea');
+                temp.value = text;
+                temp.readOnly = true;
+                temp.setAttribute('readonly', '');
+                temp.tabIndex = -1;
+                temp.style.position = 'fixed';
+                temp.style.top = '-9999px';
+                temp.style.left = '-9999px';
+                temp.style.opacity = '0';
+                document.body.appendChild(temp);
+
+                temp.select();
+                temp.setSelectionRange(0, text.length);
+
+                var ok = false;
+                try {
+                    ok = document.execCommand('copy');
+                } catch (e) {
+                    ok = false;
+                }
+
+                document.body.removeChild(temp);
+                window.scrollTo(0, savedScrollY);
+                showToast(ok ? 'Copied for WhatsApp!' : 'Copy failed — select text manually.');
+            }
+
+            function copyReport() {
+                var text = buildWhatsAppMessage();
+                if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                    navigator.clipboard.writeText(text).then(function () {
+                        showToast('Copied for WhatsApp!');
+                    }).catch(function () {
+                        fallbackCopy(text);
+                    });
+                } else {
+                    fallbackCopy(text);
+                }
+            }
+
+            function sendToWhatsApp() {
+                var text = buildWhatsAppMessage();
+                window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
+            }
+
+            /* =========================================================
+               EVENT BINDINGS (Bound once on init)
+               ========================================================= */
             function bindEvents() {
                 // Reset Modal
-                const modal = document.getElementById('resetModal');
-                document.getElementById('openResetModalBtn').addEventListener('click', () => {
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                });
-                document.getElementById('cancelResetBtn').addEventListener('click', () => {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                });
-                document.getElementById('confirmResetBtn').addEventListener('click', () => {
-                    state = createDefaultState();
-                    activeWoTab = 1;
-                    persistState();
-                    syncInputsFromState();
-                    renderRemarksList(1);
-                    renderRemarksList(2);
-                    renderWoList(1);
-                    renderWoList(2);
-                    updateUIState();
-                    renderPreview();
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                    showToast('All details reset to defaults.');
-                });
+                var modal = el('resetModal');
+                if (el('openResetBtn') && modal) {
+                    el('openResetBtn').addEventListener('click', function () {
+                        modal.classList.add('open');
+                    });
+                }
+                if (el('cancelResetBtn') && modal) {
+                    el('cancelResetBtn').addEventListener('click', function () {
+                        modal.classList.remove('open');
+                    });
+                }
+                if (el('confirmResetBtn') && modal) {
+                    el('confirmResetBtn').addEventListener('click', function () {
+                        state = createDefaultState();
+                        activeWoTab = 1;
+                        persistState();
+                        syncInputsFromState();
+                        renderRemarksList(1);
+                        renderRemarksList(2);
+                        renderWoList(1);
+                        renderWoList(2);
+                        updateCalculatedUI();
+                        renderPreview();
+                        modal.classList.remove('open');
+                        showToast('All details reset.');
+                    });
+                }
 
                 // Date
-                document.getElementById('reportDate').addEventListener('change', (e) => {
-                    state.reportDate = e.target.value;
-                    saveAndRender();
-                });
-
-                // Location Bubbles
-                document.querySelectorAll('.loc-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        state.location = btn.dataset.location;
-                        saveAndRender();
+                if (el('reportDate')) {
+                    el('reportDate').addEventListener('change', function (e) {
+                        state.reportDate = e.target.value;
+                        saveAndRefresh();
                     });
-                });
+                }
 
                 // Shift Bubbles
-                document.querySelectorAll('.shift-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        state.shift = btn.dataset.shift;
-                        const isNight = state.shift === 'Night';
-                        const startT = isNight ? '20:00' : '08:00';
-                        const endT = isNight ? '08:00' : '20:00';
-                        state.l1StartTime = startT;
-                        state.l1EndTime = endT;
-                        state.l2StartTime = startT;
-                        state.l2EndTime = endT;
+                document.querySelectorAll('.shift-pill').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var shiftVal = btn.getAttribute('data-shift');
+                        state.shift = shiftVal;
+                        var isNight = shiftVal === 'Night';
+                        var startT = isNight ? '20:00' : '08:00';
+                        var endT = isNight ? '08:00' : '20:00';
+                        if (state.l1Active) {
+                            state.l1StartTime = startT;
+                            state.l1EndTime = endT;
+                        }
+                        if (state.l2Active) {
+                            state.l2StartTime = startT;
+                            state.l2EndTime = endT;
+                        }
                         syncInputsFromState();
-                        applyDefaultRemarkForLine(1);
-                        applyDefaultRemarkForLine(2);
-                        saveAndRender();
+                        updateLineDefaultRemark(1);
+                        updateLineDefaultRemark(2);
+                        saveAndRefresh();
                     });
                 });
 
-                // Line 1 & Line 2 Controls
-                [1, 2].forEach(num => {
-                    document.getElementById(`l${num}ActiveBtn`).addEventListener('click', () => {
-                        state[`l${num}Active`] = true;
-                        applyDefaultRemarkForLine(num);
-                        saveAndRender();
-                    });
-                    document.getElementById(`l${num}InactiveBtn`).addEventListener('click', () => {
-                        state[`l${num}Active`] = false;
-                        applyDefaultRemarkForLine(num);
-                        saveAndRender();
-                    });
-
-                    document.getElementById(`l${num}ModeCurrent`).addEventListener('click', () => {
-                        state[`l${num}OutputMode`] = 'Current';
-                        saveAndRender();
-                    });
-                    document.getElementById(`l${num}ModeFinal`).addEventListener('click', () => {
-                        state[`l${num}OutputMode`] = 'Final';
-                        saveAndRender();
-                    });
-
-                    ['Dumping', 'Packing', 'Target', 'Output', 'RunHrs', 'RunMins'].forEach(field => {
-                        document.getElementById(`l${num}${field}`).addEventListener('input', (e) => {
-                            state[`l${num}${field}`] = e.target.value;
-                            saveAndRender();
+                // Line 1 & Line 2
+                [1, 2].forEach(function (n) {
+                    if (el('l' + n + 'ActiveBtn')) {
+                        el('l' + n + 'ActiveBtn').addEventListener('click', function () {
+                            state['l' + n + 'Active'] = true;
+                            updateLineDefaultRemark(n);
+                            saveAndRefresh();
                         });
-                    });
-
-                    ['StartTime', 'EndTime'].forEach(field => {
-                        document.getElementById(`l${num}${field}`).addEventListener('change', (e) => {
-                            state[`l${num}${field}`] = e.target.value;
-                            saveAndRender();
+                    }
+                    if (el('l' + n + 'InactiveBtn')) {
+                        el('l' + n + 'InactiveBtn').addEventListener('click', function () {
+                            state['l' + n + 'Active'] = false;
+                            updateLineDefaultRemark(n);
+                            saveAndRefresh();
                         });
+                    }
+                    if (el('l' + n + 'ModeCurrent')) {
+                        el('l' + n + 'ModeCurrent').addEventListener('click', function () {
+                            state['l' + n + 'OutputMode'] = 'Current';
+                            saveAndRefresh();
+                        });
+                    }
+                    if (el('l' + n + 'ModeFinal')) {
+                        el('l' + n + 'ModeFinal').addEventListener('click', function () {
+                            state['l' + n + 'OutputMode'] = 'Final';
+                            saveAndRefresh();
+                        });
+                    }
+
+                    ['Dumping', 'Packing', 'Target', 'Output', 'RunHrs', 'RunMins'].forEach(function (field) {
+                        var input = el('l' + n + field);
+                        if (input) {
+                            input.addEventListener('input', function (e) {
+                                state['l' + n + field] = e.target.value;
+                                saveAndRefresh();
+                            });
+                        }
                     });
 
-                    document.getElementById(`addL${num}RemarkBtn`).addEventListener('click', () => {
-                        state[`l${num}Remarks`].push('');
-                        renderRemarksList(num);
-                        persistState();
-                        renderPreview();
+                    ['StartTime', 'EndTime'].forEach(function (field) {
+                        var input = el('l' + n + field);
+                        if (input) {
+                            input.addEventListener('change', function (e) {
+                                state['l' + n + field] = e.target.value;
+                                saveAndRefresh();
+                            });
+                        }
                     });
 
-                    document.getElementById(`addL${num}WoBtn`).addEventListener('click', () => {
-                        state[`l${num}Wos`].push({ name: '', wo: '', completed: false });
-                        renderWoList(num);
-                        persistState();
-                        renderPreview();
-                    });
+                    if (el('addL' + n + 'RemarkBtn')) {
+                        el('addL' + n + 'RemarkBtn').addEventListener('click', function () {
+                            state['l' + n + 'Remarks'].push('');
+                            renderRemarksList(n);
+                            persistState();
+                            renderPreview();
+                        });
+                    }
+
+                    if (el('addL' + n + 'WoBtn')) {
+                        el('addL' + n + 'WoBtn').addEventListener('click', function () {
+                            state['l' + n + 'Wos'].push({ name: '', wo: '', completed: false });
+                            renderWoList(n);
+                            persistState();
+                            renderPreview();
+                        });
+                    }
                 });
 
                 // Total Output Checkbox
-                document.getElementById('showTotalOutput').addEventListener('change', (e) => {
-                    state.showTotalOutput = e.target.checked;
-                    saveAndRender();
-                });
+                if (el('showTotalOutput')) {
+                    el('showTotalOutput').addEventListener('change', function (e) {
+                        state.showTotalOutput = e.target.checked;
+                        saveAndRefresh();
+                    });
+                }
 
                 // Batching
-                document.getElementById('batchingNilBtn').addEventListener('click', () => {
-                    state.batchingNil = !state.batchingNil;
-                    saveAndRender();
-                });
-                document.getElementById('batchingInput').addEventListener('input', (e) => {
-                    state.batchingText = e.target.value;
-                    saveAndRender();
-                });
+                if (el('batchingNilBtn') && el('batchingInput')) {
+                    el('batchingNilBtn').addEventListener('click', function () {
+                        state.batchingText = 'NIL';
+                        el('batchingInput').value = 'NIL';
+                        saveAndRefresh();
+                    });
+                    el('batchingInput').addEventListener('input', function (e) {
+                        state.batchingText = e.target.value;
+                        saveAndRefresh();
+                    });
+                }
 
                 // Labelling
-                const labEl = document.getElementById('labellingText');
-                labEl.addEventListener('input', () => {
-                    state.labellingText = labEl.value;
-                    autoResize(labEl);
-                    saveAndRender();
-                });
+                if (el('labellingInput')) {
+                    el('labellingInput').addEventListener('input', function (e) {
+                        state.labellingText = e.target.value;
+                        autoResize(e.target);
+                        saveAndRefresh();
+                    });
+                }
 
-                // Supervisors (auto-sync with Sign-Off, mapping Balaji -> N. Balaji)
-                document.querySelectorAll('.sup-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const sup = btn.dataset.sup;
-                        const mappedSign = mapSupervisorToSignOff(sup);
-                        const idx = state.supervisors.indexOf(sup);
+                // Supervisors (sync with Sign-Off, mapping Balaji -> N. Balaji)
+                document.querySelectorAll('.sup-btn').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var sup = btn.getAttribute('data-sup');
+                        var mapped = mapSupToSign(sup);
+                        var idx = state.supervisors.indexOf(sup);
                         if (idx === -1) {
                             state.supervisors.push(sup);
-                            if (!state.signOffBubbles.includes(mappedSign)) {
-                                state.signOffBubbles.push(mappedSign);
+                            if (state.signOffBubbles.indexOf(mapped) === -1) {
+                                state.signOffBubbles.push(mapped);
                             }
                         } else {
                             state.supervisors.splice(idx, 1);
-                            const sIdx = state.signOffBubbles.indexOf(mappedSign);
+                            var sIdx = state.signOffBubbles.indexOf(mapped);
                             if (sIdx !== -1) state.signOffBubbles.splice(sIdx, 1);
                         }
-                        saveAndRender();
+                        saveAndRefresh();
                     });
                 });
 
-                // QC Bubbles
-                document.querySelectorAll('.qc-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const qc = btn.dataset.qc;
-                        const idx = state.qcs.indexOf(qc);
+                // QC
+                document.querySelectorAll('.qc-btn').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var qc = btn.getAttribute('data-qc');
+                        var idx = state.qcs.indexOf(qc);
                         if (idx === -1) state.qcs.push(qc);
                         else state.qcs.splice(idx, 1);
-                        saveAndRender();
+                        saveAndRefresh();
                     });
                 });
 
-                // Leave & Attendance
-                document.getElementById('allPresentBtn').addEventListener('click', () => {
-                    state.allPresent = !state.allPresent;
-                    saveAndRender();
-                });
-                const leaveEl = document.getElementById('leaveText');
-                leaveEl.addEventListener('input', () => {
-                    state.leaveText = leaveEl.value;
-                    autoResize(leaveEl);
-                    saveAndRender();
-                });
+                // Leave
+                if (el('allPresentBtn') && el('leaveInput')) {
+                    el('allPresentBtn').addEventListener('click', function () {
+                        state.leaveText = 'All Present.';
+                        el('leaveInput').value = 'All Present.';
+                        autoResize(el('leaveInput'));
+                        saveAndRefresh();
+                    });
+                    el('leaveInput').addEventListener('input', function (e) {
+                        state.leaveText = e.target.value;
+                        autoResize(e.target);
+                        saveAndRefresh();
+                    });
+                }
 
                 // WO Tabs
-                document.getElementById('woTabL1Btn').addEventListener('click', () => {
-                    activeWoTab = 1;
-                    updateUIState();
-                });
-                document.getElementById('woTabL2Btn').addEventListener('click', () => {
-                    activeWoTab = 2;
-                    updateUIState();
-                });
+                if (el('woTab1Btn')) {
+                    el('woTab1Btn').addEventListener('click', function () {
+                        activeWoTab = 1;
+                        updateCalculatedUI();
+                    });
+                }
+                if (el('woTab2Btn')) {
+                    el('woTab2Btn').addEventListener('click', function () {
+                        activeWoTab = 2;
+                        updateCalculatedUI();
+                    });
+                }
 
-                // Sign-off Bubbles & Custom Input
-                document.querySelectorAll('.sign-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const sign = btn.dataset.sign;
-                        const idx = state.signOffBubbles.indexOf(sign);
+                // Sign-Off
+                document.querySelectorAll('.sign-btn').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var sign = btn.getAttribute('data-sign');
+                        var idx = state.signOffBubbles.indexOf(sign);
                         if (idx === -1) state.signOffBubbles.push(sign);
                         else state.signOffBubbles.splice(idx, 1);
-                        saveAndRender();
+                        saveAndRefresh();
                     });
                 });
-                document.getElementById('customSignOff').addEventListener('input', (e) => {
-                    state.customSignOff = e.target.value;
-                    saveAndRender();
-                });
+                if (el('customSignOff')) {
+                    el('customSignOff').addEventListener('input', function (e) {
+                        state.customSignOff = e.target.value;
+                        saveAndRefresh();
+                    });
+                }
 
                 // Preview Stage Switcher
-                document.getElementById('stageStartBtn').addEventListener('click', () => {
-                    state.reportStage = 'start';
-                    saveAndRender();
-                });
-                document.getElementById('stageOutputBtn').addEventListener('click', () => {
-                    state.reportStage = 'output';
-                    saveAndRender();
-                });
+                if (el('stageStartBtn')) {
+                    el('stageStartBtn').addEventListener('click', function () {
+                        state.reportStage = 'start';
+                        saveAndRefresh();
+                    });
+                }
+                if (el('stageOutputBtn')) {
+                    el('stageOutputBtn').addEventListener('click', function () {
+                        state.reportStage = 'output';
+                        saveAndRefresh();
+                    });
+                }
 
-                // Copy & WhatsApp Buttons
-                document.getElementById('previewCopyBtn').addEventListener('click', copyReport);
-                document.getElementById('desktopCopyBtn').addEventListener('click', copyReport);
-                document.getElementById('mobileCopyBtn').addEventListener('click', copyReport);
-                document.getElementById('desktopWaBtn').addEventListener('click', openWhatsApp);
-                document.getElementById('mobileWaBtn').addEventListener('click', openWhatsApp);
+                // Copy & WhatsApp buttons
+                if (el('headerCopyBtn')) el('headerCopyBtn').addEventListener('click', copyReport);
+                if (el('copyReportBtn')) el('copyReportBtn').addEventListener('click', copyReport);
+                if (el('sendWaBtn')) el('sendWaBtn').addEventListener('click', sendToWhatsApp);
             }
 
-            // --- Initialize on DOM Ready ---
-            document.addEventListener('DOMContentLoaded', () => {
+            /* =========================================================
+               INITIALIZATION
+               ========================================================= */
+            function init() {
                 state = loadState();
                 syncInputsFromState();
                 renderRemarksList(1);
                 renderRemarksList(2);
                 renderWoList(1);
                 renderWoList(2);
-                updateUIState();
+                updateCalculatedUI();
                 renderPreview();
                 bindEvents();
-            });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
         })();
     </script>
 </body>
