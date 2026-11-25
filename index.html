@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#075e54" />
+<link rel="manifest" href="./manifest.json" />
+<link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <title>WhatsApp Shift Report Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        whatsapp: {
+                            light: '#dcf8c6',
+                            DEFAULT: '#25D366',
+                            dark: '#128C7E',
+                            teal: '#075E54',
+                            bg: '#efeae2'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Auto-expanding textareas with clean mobile readability */
+        textarea.auto-expand {
+            overflow: hidden;
+            resize: none;
+            min-height: 44px;
+        }
+        /* WhatsApp chat bubble tail effect */
+        .wa-bubble {
+            position: relative;
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            border-top-left-radius: 0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+        }
+        .wa-bubble::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -8px;
+            width: 0;
+            height: 0;
+            border-top: 8px solid #ffffff;
+            border-left: 8px solid transparent;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col pb-24 lg:pb-8">
+
+    <!-- Compact Top Header -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-2.5">
+                <div class="bg-emerald-500 p-2 rounded-lg text-slate-950 shadow-sm shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-sm sm:text-base font-extrabold tracking-tight leading-tight">WhatsApp Shift Report</h1>
+                    <p class="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                        Auto-saved in memory
+                    </p>
+                </div>
+            </div>
+
+            <!-- Prominent Red Reset Button -->
+            <button type="button" onclick="openResetModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-sm transition active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span>Reset</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Custom Reset Confirmation Modal (No native confirm()) -->
+    <div id="resetModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 transform transition-all">
+            <div class="flex items-center gap-3 text-rose-600 mb-3">
+                <div class="p-2.5 bg-rose-100 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-extrabold text-slate-900">Reset Shift Report?</h3>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed mb-6">
+                Do you want to clear every filled detail and restore default shift settings?
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" onclick="closeResetModal()" class="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
+                    Cancel
+                </button>
+                <button type="button" onclick="confirmReset()" class="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-sm transition">
+                    Yes, Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 transform -translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-2.5 rounded-full shadow-xl border border-slate-700 flex items-center gap-2 text-xs sm:text-sm font-semibold">
+            <span id="toast-icon" class="text-emerald-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+            </span>
+            <span id="toast-msg">Copied to clipboard!</span>
+        </div>
+    </div>
+
+    <!-- Main Layout Grid -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- LEFT COLUMN: Form Inputs (7 cols on lg) -->
+            <div class="lg:col-span-7 space-y-5">
+
+                <!-- 1. Date, Location & Shift Bubbles -->
+                <section class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                            1. Date, Location & Shift
+                        </h2>
+                        <span class="text-[11px] font-semibold text-slate-400">*Dear Sirs & Ms.Priya,*</span>
+                    </div>
+                    <div class="p-4 sm:p-5 space-y-4">
+                        <!-- Date Picker -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1.5">Report Date</label>
+                            <input type="date" id="reportDate" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" onchange="saveAndRender()">
+                        </div>
+
+                        <!-- Location & Shift Bubble Selectors -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Location Bubbles -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-2">Location</label>
+                                <div class="grid grid-cols-2 gap-2" id="locationBubbles">
+                                    <button type="button" data-val="Pioneer" onclick="selectLocation('Pioneer')" class="loc-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center">
+                                        Pioneer
+                                    </button>
+                                    <button type="button" data-val="Tuas" onclick="selectLocation('Tuas')" class="loc-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center">
+                                        Tuas
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Shift Bubbles -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-2">Shift <span class="text-rose-500 font-normal">(Select)</span></label>
+                                <div class="grid grid-cols-2 gap-2" id="shiftBubbles">
+                                    <button type="button" data-val="Morning" onclick="selectShift('Morning')" class="shift-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center">
+                                        ☀️ Morning
+                                    </button>
+                                    <button type="button" data-val="Night" onclick="selectShift('Night')" class="shift-btn py-2.5 px-3 rounded-xl text-sm font-bold border transition text-center">
+                                        🌙 Night
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. Line-1 Production -->
+                <section class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-2">
+                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            2. Line-1 Production
+                        </h2>
+                        <!-- Active / No Production Pill Toggle -->
+                        <div class="inline-flex rounded-xl bg-slate-200/80 p-1">
+                            <button type="button" id="l1ActiveBtn" onclick="setLineActive(1, true)" class="px-2.5 py-1 rounded-lg text-xs font-bold transition">Active</button>
+                            <button type="button" id="l1InactiveBtn" onclick="setLineActive(1, false)" class="px-2.5 py-1 rounded-lg text-xs font-bold transition">No Prod.</button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 sm:p-5 space-y-5">
+                        <div id="line1Body" class="space-y-4">
+                            <!-- Operators -->
+                            <div class="grid grid-cols-3 gap-2.5">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">Dumping Ops</label>
+                                    <input type="number" id="l1Dumping" min="0" max="99" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">Packing Ops</label>
+                                    <input type="number" id="l1Packing" min="0" max="99" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-1">Line-1 Total</label>
+                                    <div id="l1TotalOpsDisplay" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-mono font-extrabold text-slate-800">06</div>
+                                </div>
+                            </div>
+
+                            <!-- Interval / Final Metrics Box -->
+                            <div id="l1OutputMetricsBox" class="p-3.5 rounded-xl bg-slate-50/90 border border-slate-200/90 space-y-3.5">
+                                <!-- Output Type Toggle Bar (Current vs Final) -->
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="text-xs font-extrabold uppercase tracking-wide text-slate-600">Output Stage</span>
+                                    <div class="inline-flex rounded-xl bg-slate-200 p-1">
+                                        <button type="button" id="l1ModeCurrent" onclick="setLineOutputMode(1, 'Current')" class="px-3 py-1 rounded-lg text-xs font-bold transition">Current Output</button>
+                                        <button type="button" id="l1ModeFinal" onclick="setLineOutputMode(1, 'Final')" class="px-3 py-1 rounded-lg text-xs font-bold transition">Final Output</button>
+                                    </div>
+                                </div>
+
+                                <!-- Target, Output, Variance -->
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Target (MT)</label>
+                                        <input type="number" id="l1Target" step="0.001" min="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                                    </div>
+                                    <div>
+                                        <label id="l1OutputLabel" class="block text-xs font-bold text-emerald-700 mb-1">Current Output (MT)</label>
+                                        <input type="number" id="l1Output" step="0.001" min="0" placeholder="0.000" class="w-full px-3 py-2.5 bg-emerald-50/70 border border-emerald-400 rounded-xl text-sm font-mono font-bold text-emerald-950 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" oninput="saveAndRender()">
+                                    </div>
+                                    <div>
+                                        <label id="l1VarianceLabel" class="block text-xs font-bold text-slate-500 mb-1">Balance (MT)</label>
+                                        <div id="l1VarianceDisplay" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-mono font-extrabold text-slate-800">50.000</div>
+                                    </div>
+                                </div>
+
+                                <!-- Operating Hours (Start & End Time) -->
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 items-end">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Start Time</label>
+                                        <input type="time" id="l1StartTime" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none" onchange="saveAndRender()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">End Time</label>
+                                        <input type="time" id="l1EndTime" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none" onchange="saveAndRender()">
+                                    </div>
+                                    <div class="col-span-2 sm:col-span-1">
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">Operating Duration</label>
+                                        <div id="l1OpDurationDisplay" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700 truncate">3 hrs</div>
+                                    </div>
+                                </div>
+
+                                <!-- Prod. Running Hrs (Hrs + Mins) & Efficiency -->
+                                <div class="grid grid-cols-3 gap-2.5 items-end">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Run Hrs</label>
+                                        <input type="number" id="l1RunHrs" min="0" max="24" placeholder="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Run Mins</label>
+                                        <input type="number" id="l1RunMins" min="0" max="59" placeholder="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-blue-700 mb-1">Efficiency</label>
+                                        <div id="l1EfficiencyDisplay" class="w-full px-2.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-xs sm:text-sm font-mono font-extrabold text-blue-900">0.000</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Line-1 Remarks (Full-width auto-expanding) -->
+                        <div class="pt-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-extrabold uppercase tracking-wide text-slate-600">Line-1 Remarks</label>
+                                <button type="button" onclick="addRemark(1)" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition active:scale-95">
+                                    + Add Remark
+                                </button>
+                            </div>
+                            <div id="line1RemarksList" class="space-y-2.5"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Line-2 Production -->
+                <section class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-2">
+                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                            3. Line-2 Production
+                        </h2>
+                        <!-- Active / No Production Pill Toggle -->
+                        <div class="inline-flex rounded-xl bg-slate-200/80 p-1">
+                            <button type="button" id="l2ActiveBtn" onclick="setLineActive(2, true)" class="px-2.5 py-1 rounded-lg text-xs font-bold transition">Active</button>
+                            <button type="button" id="l2InactiveBtn" onclick="setLineActive(2, false)" class="px-2.5 py-1 rounded-lg text-xs font-bold transition">No Prod.</button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 sm:p-5 space-y-5">
+                        <div id="line2Body" class="space-y-4">
+                            <!-- Operators -->
+                            <div class="grid grid-cols-3 gap-2.5">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">Dumping Ops</label>
+                                    <input type="number" id="l2Dumping" min="0" max="99" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">Packing Ops</label>
+                                    <input type="number" id="l2Packing" min="0" max="99" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-1">Line-2 Total</label>
+                                    <div id="l2TotalOpsDisplay" class="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-mono font-extrabold text-slate-800">06</div>
+                                </div>
+                            </div>
+
+                            <!-- Interval / Final Metrics Box -->
+                            <div id="l2OutputMetricsBox" class="p-3.5 rounded-xl bg-slate-50/90 border border-slate-200/90 space-y-3.5">
+                                <!-- Output Type Toggle Bar (Current vs Final) -->
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="text-xs font-extrabold uppercase tracking-wide text-slate-600">Output Stage</span>
+                                    <div class="inline-flex rounded-xl bg-slate-200 p-1">
+                                        <button type="button" id="l2ModeCurrent" onclick="setLineOutputMode(2, 'Current')" class="px-3 py-1 rounded-lg text-xs font-bold transition">Current Output</button>
+                                        <button type="button" id="l2ModeFinal" onclick="setLineOutputMode(2, 'Final')" class="px-3 py-1 rounded-lg text-xs font-bold transition">Final Output</button>
+                                    </div>
+                                </div>
+
+                                <!-- Target, Output, Variance -->
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Target (MT)</label>
+                                        <input type="number" id="l2Target" step="0.001" min="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                                    </div>
+                                    <div>
+                                        <label id="l2OutputLabel" class="block text-xs font-bold text-emerald-700 mb-1">Current Output (MT)</label>
+                                        <input type="number" id="l2Output" step="0.001" min="0" placeholder="0.000" class="w-full px-3 py-2.5 bg-emerald-50/70 border border-emerald-400 rounded-xl text-sm font-mono font-bold text-emerald-950 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" oninput="saveAndRender()">
+                                    </div>
+                                    <div>
+                                        <label id="l2VarianceLabel" class="block text-xs font-bold text-slate-500 mb-1">Balance (MT)</label>
+                                        <div id="l2VarianceDisplay" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-mono font-extrabold text-slate-800">33.000</div>
+                                    </div>
+                                </div>
+
+                                <!-- Operating Hours (Start & End Time) -->
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 items-end">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Start Time</label>
+                                        <input type="time" id="l2StartTime" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none" onchange="saveAndRender()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">End Time</label>
+                                        <input type="time" id="l2EndTime" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none" onchange="saveAndRender()">
+                                    </div>
+                                    <div class="col-span-2 sm:col-span-1">
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">Operating Duration</label>
+                                        <div id="l2OpDurationDisplay" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700 truncate">3 hrs</div>
+                                    </div>
+                                </div>
+
+                                <!-- Prod. Running Hrs (Hrs + Mins) & Efficiency -->
+                                <div class="grid grid-cols-3 gap-2.5 items-end">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Run Hrs</label>
+                                        <input type="number" id="l2RunHrs" min="0" max="24" placeholder="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Run Mins</label>
+                                        <input type="number" id="l2RunMins" min="0" max="59" placeholder="0" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-blue-700 mb-1">Efficiency</label>
+                                        <div id="l2EfficiencyDisplay" class="w-full px-2.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-xs sm:text-sm font-mono font-extrabold text-blue-900">0.000</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Line-2 Remarks -->
+                        <div class="pt-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-extrabold uppercase tracking-wide text-slate-600">Line-2 Remarks</label>
+                                <button type="button" onclick="addRemark(2)" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition active:scale-95">
+                                    + Add Remark
+                                </button>
+                            </div>
+                            <div id="line2RemarksList" class="space-y-2.5"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. Total Output, Batching & Labelling -->
+                <section class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                            4. Total Output, Batching & Labelling
+                        </h2>
+                    </div>
+                    <div class="p-4 sm:p-5 space-y-4">
+                        <!-- Total Output Checkbox Bar -->
+                        <label id="totalOutputToggleRow" class="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 cursor-pointer select-none">
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" id="showTotalOutput" class="w-5 h-5 rounded-md text-emerald-600 focus:ring-emerald-500 border-slate-300" checked onchange="saveAndRender()">
+                                <div>
+                                    <span class="text-sm font-bold text-slate-900 block">Include Total Output Line</span>
+                                    <span class="text-[11px] text-slate-500">Placed right after Line-2 in Interval/Final report</span>
+                                </div>
+                            </div>
+                            <span class="text-sm font-mono font-extrabold text-emerald-800 bg-white px-2.5 py-1 rounded-lg border border-emerald-200">
+                                <span id="totalOutputBadge">0.000</span>MT
+                            </span>
+                        </label>
+
+                        <!-- Batching Mode & Input -->
+                        <div>
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                <label class="text-xs font-bold text-slate-600">Batching Manpower</label>
+                                <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
+                                    <button type="button" data-bmode="Operators" onclick="setBatchingMode('Operators')" class="batch-mode-btn px-2.5 py-1 rounded-lg text-xs font-bold transition">Operators</button>
+                                    <button type="button" data-bmode="NIL" onclick="setBatchingMode('NIL')" class="batch-mode-btn px-2.5 py-1 rounded-lg text-xs font-bold transition">NIL</button>
+                                    <button type="button" data-bmode="Custom" onclick="setBatchingMode('Custom')" class="batch-mode-btn px-2.5 py-1 rounded-lg text-xs font-bold transition">Custom Text</button>
+                                </div>
+                            </div>
+                            <div id="batchingOperatorsInputWrap">
+                                <input type="number" id="batchingCount" min="0" max="99" placeholder="Enter number of operators (e.g. 3)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                            </div>
+                            <div id="batchingCustomInputWrap" class="hidden">
+                                <input type="text" id="batchingCustomText" placeholder="e.g. 02 Contract Workers / 03 Operators" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                            </div>
+                            <div id="batchingNilBanner" class="hidden px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-500">
+                                Will output: Batching: NIL
+                            </div>
+                        </div>
+
+                        <!-- Labelling -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1.5">Labelling Details</label>
+                            <textarea id="labellingText" rows="2" placeholder="e.g. WO 0798(7200pcs) & 0588(5040pcs) or 01 People & Me Stickers Work..." class="auto-expand w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" oninput="autoResize(this); saveAndRender()"></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. Production Supervisors & QC Bubbles -->
+                <section class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200">
+                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                            5. Production Supervisor & QC
+                        </h2>
+                    </div>
+                    <div class="p-4 sm:p-5 space-y-4">
+                        <!-- Production Supervisors Multi-Select Bubbles -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-2">Production Supervisors <span class="text-slate-400 font-normal">(Tap one or more)</span></label>
+                            <div class="flex flex-wrap gap-2" id="supervisorBubbles">
+                                <button type="button" data-sup="Balaji" onclick="toggleSupervisor('Balaji')" class="sup-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Balaji</button>
+                                <button type="button" data-sup="Anson" onclick="toggleSupervisor('Anson')" class="sup-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Anson</button>
+                                <button type="button" data-sup="Chi Hui" onclick="toggleSupervisor('Chi Hui')" class="sup-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Chi Hui</button>
+                            </div>
+                        </div>
+
+                        <!-- QC Multi-Select Bubbles -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-2">QC Personnel <span class="text-slate-400 font-normal">(Tap one or more)</span></label>
+                            <div class="flex flex-wrap gap-2" id="qcBubbles">
+                                <button type="button" data-qc="Mohan" onclick="toggleQc('Mohan')" class="qc-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Mohan</button>
+                                <button type="button" data-qc="Kishore" onclick="toggleQc('Kishore')" class="qc-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Kishore</button>
+                                <button type="button" data-qc="Vidhya" onclick="toggleQc('Vidhya')" class="qc-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Vidhya</button>
+                                <button type="button" data-qc="Kirthana" onclick="toggleQc('Kirthana')" class="qc-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Kirthana</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. Leave / Attendance (Full Expandable View) -->
+                <section class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-2">
+                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+                            6. Leave & Attendance
+                        </h2>
+                        <!-- Quick All Present Toggle -->
+                        <button type="button" id="allPresentBtn" onclick="toggleAllPresent()" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition">
+                            All Present
+                        </button>
+                    </div>
+                    <div class="p-4 sm:p-5">
+                        <div id="allPresentBanner" class="hidden p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs sm:text-sm font-bold text-emerald-800">
+                            ✓ Will output: Leave: All Present.
+                        </div>
+                        <div id="leaveDetailsContainer" class="space-y-2.5">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs text-slate-500 font-medium">Enter each person on leave / late (expands automatically):</span>
+                                <button type="button" onclick="addLeaveRow()" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                                    + Add Person
+                                </button>
+                            </div>
+                            <div id="leaveRowsList" class="space-y-2"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. Product & WO Details (Tab / Card Style for Line 1 & Line 2) -->
+                <section class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200">
+                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-cyan-600"></span>
+                            7. Product & WO Details
+                        </h2>
+                    </div>
+                    <div class="p-4 sm:p-5 space-y-5">
+                        <!-- Line 1 WOs -->
+                        <div class="space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-extrabold uppercase tracking-wide text-slate-700">*Line 1:* Work Orders</span>
+                                <button type="button" onclick="addWoCard(1)" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition active:scale-95">
+                                    + Add Line 1 WO
+                                </button>
+                            </div>
+                            <div id="l1WoList" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Line 2 WOs -->
+                        <div class="pt-4 border-t border-slate-100 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-extrabold uppercase tracking-wide text-slate-700">*Line 2:* Work Orders</span>
+                                <button type="button" onclick="addWoCard(2)" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition active:scale-95">
+                                    + Add Line 2 WO
+                                </button>
+                            </div>
+                            <div id="l2WoList" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 8. Sign-Off Bubbles -->
+                <section class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-4 sm:px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+                        <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
+                            8. Sign-Off Name
+                        </h2>
+                        <span class="text-[11px] text-slate-400 font-medium">Auto-synced with Supervisors</span>
+                    </div>
+                    <div class="p-4 sm:p-5 space-y-3">
+                        <div class="flex flex-wrap gap-2" id="signOffBubbles">
+                            <button type="button" data-sign="N. Balaji" onclick="toggleSignOff('N. Balaji')" class="sign-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">N. Balaji</button>
+                            <button type="button" data-sign="Anson" onclick="toggleSignOff('Anson')" class="sign-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Anson</button>
+                            <button type="button" data-sign="Chi Hui" onclick="toggleSignOff('Chi Hui')" class="sign-btn py-2 px-4 rounded-full text-xs sm:text-sm font-bold border transition">Chi Hui</button>
+                        </div>
+                        <div>
+                            <input type="text" id="customSignOff" placeholder="Or type custom sign-off name (e.g. N. Balaji.)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" oninput="saveAndRender()">
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- RIGHT COLUMN: WhatsApp Live Preview & Stage Switcher (5 cols on lg) -->
+            <div class="lg:col-span-5 lg:sticky lg:top-16 space-y-4">
+                <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden flex flex-col">
+                    <!-- WhatsApp Top Header with Quick Copy Button -->
+                    <div class="bg-whatsapp-teal text-white px-4 py-3 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center font-extrabold text-xs shrink-0">
+                                WA
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold leading-tight">WhatsApp Preview</h3>
+                                <p class="text-[11px] text-emerald-100/85">Tap mode below to switch format</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="copyToClipboard()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-extrabold text-xs shadow-xs transition active:scale-95 shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+
+                    <!-- 2-Option Report Stage Switcher at Top of Preview -->
+                    <div class="bg-slate-900 p-2.5 border-b border-slate-800">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" id="stageStartBtn" onclick="setReportStage('start')" class="py-2.5 px-3 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5">
+                                <span>🚀</span>
+                                <span>Start of Shift</span>
+                            </button>
+                            <button type="button" id="stageOutputBtn" onclick="setReportStage('output')" class="py-2.5 px-3 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5">
+                                <span>📊</span>
+                                <span>Interval / Final</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Full-Height WhatsApp Chat Wallpaper Preview (No cramped internal scroll) -->
+                    <div class="bg-whatsapp-bg p-4 sm:p-5" style="background-image: radial-gradient(#cbd5e1 0.8px, transparent 0.8px); background-size: 16px 16px;">
+                        <div class="wa-bubble p-3.5 sm:p-4 text-[13.5px] leading-[1.48] text-slate-900 font-sans break-words">
+                            <div id="whatsappPreviewRendered" class="whitespace-pre-wrap"></div>
+                            <div class="text-right mt-2 flex items-center justify-end gap-1 text-[10px] text-slate-400 select-none">
+                                <span id="previewTimestamp">08:00</span>
+                                <svg class="w-3.5 h-3.5 text-sky-500" viewBox="0 0 16 15" fill="currentColor">
+                                    <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden Raw Textarea for Reliable Clipboard Copy -->
+                    <textarea id="rawOutputText" class="sr-only" aria-hidden="true"></textarea>
+
+                    <!-- Desktop Action Buttons -->
+                    <div class="hidden lg:grid p-4 bg-slate-50 border-t border-slate-200 grid-cols-2 gap-3">
+                        <button type="button" onclick="copyToClipboard()" class="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 transition active:scale-95">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                            </svg>
+                            <span>Copy Message</span>
+                        </button>
+                        <button type="button" onclick="sendToWhatsApp()" class="w-full py-3 px-4 rounded-xl bg-whatsapp hover:bg-whatsapp-dark text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 transition active:scale-95">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
+                            </svg>
+                            <span>Open WhatsApp</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Sticky Bottom Action Bar for Mobile / Tablet -->
+    <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+        <div class="max-w-xl mx-auto grid grid-cols-2 gap-2.5">
+            <button type="button" onclick="copyToClipboard()" class="py-3 px-4 rounded-xl bg-slate-900 active:bg-slate-800 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs transition active:scale-95">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                <span>Copy Report</span>
+            </button>
+            <button type="button" onclick="sendToWhatsApp()" class="py-3 px-4 rounded-xl bg-whatsapp active:bg-whatsapp-dark text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs transition active:scale-95">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
+                </svg>
+                <span>WhatsApp</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'sg_factory_shift_report_v2';
+
+        // Application State
+        let state = {};
+
+        // Get local YYYY-MM-DD string
+        function getTodayLocalISO() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Exact Default Factory State on Reset
+        function createDefaultState() {
+            return {
+                reportStage: 'output', // 'start' or 'output'
+                reportDate: getTodayLocalISO(),
+                location: 'Pioneer',
+                shift: '', // Blank by default as requested
+                // Line 1
+                l1Active: true,
+                l1Dumping: 4,
+                l1Packing: 2,
+                l1Target: 50,
+                l1OutputMode: 'Current',
+                l1Output: '',
+                l1StartTime: '08:00',
+                l1EndTime: '11:00',
+                l1RunHrs: '',
+                l1RunMins: '',
+                l1Remarks: ['Line 1 starts at 0800am.'],
+                // Line 2
+                l2Active: true,
+                l2Dumping: 4,
+                l2Packing: 2,
+                l2Target: 33,
+                l2OutputMode: 'Current',
+                l2Output: '',
+                l2StartTime: '08:00',
+                l2EndTime: '11:00',
+                l2RunHrs: '',
+                l2RunMins: '',
+                l2Remarks: ['Line 2 starts at 0800am.'],
+                // Total & Support (unchecked by default)
+                showTotalOutput: false,
+                batchingMode: 'Operators',
+                batchingCount: '',
+                batchingCustomText: '',
+                labellingText: '',
+                // Supervisors & QC
+                supervisors: [],
+                qcs: [],
+                // Leave
+                allPresent: false,
+                leaveRows: [''],
+                // Product & WO Cards
+                l1Wos: [{ name: '', wo: '', completed: false }],
+                l2Wos: [{ name: '', wo: '', completed: false }],
+                // Sign-off
+                signOffSelected: [],
+                customSignOff: ''
+            };
+        }
+
+        // --- Helper Formatting Functions ---
+// ... existing code ... -->
+            // Update untouched default remarks automatically only if line is active
+            if (state.l1Active && state.l1Remarks.length === 1 && /^Line 1 starts at 0800(am|pm)\.$/.test(state.l1Remarks[0].trim())) {
+                state.l1Remarks[0] = `Line 1 starts at ${timeTag}.`;
+            }
+            if (state.l2Active && state.l2Remarks.length === 1 && /^Line 2 starts at 0800(am|pm)\.$/.test(state.l2Remarks[0].trim())) {
+                state.l2Remarks[0] = `Line 2 starts at ${timeTag}.`;
+            }
+
+            syncDomFromState();
+            saveAndRender();
+        }
+
+        function setLineActive(lineNum, isActive) {
+            state[`l${lineNum}Active`] = isActive;
+            const timeTag = state.shift === 'Night' ? '0800pm' : '0800am';
+            const defaultRemarkRegex = new RegExp(`^Line ${lineNum} starts at 0800(am|pm)\\.$`);
+
+            if (!isActive) {
+                // Remove untouched default start remark when switched to No Production
+                state[`l${lineNum}Remarks`] = state[`l${lineNum}Remarks`].filter(r => !defaultRemarkRegex.test(r.trim()));
+            } else {
+                // Restore default start remark if switched back to Active and remarks list is empty
+                const nonEmpty = state[`l${lineNum}Remarks`].map(r => r.trim()).filter(Boolean);
+                if (nonEmpty.length === 0) {
+                    state[`l${lineNum}Remarks`] = [`Line ${lineNum} starts at ${timeTag}.`];
+                }
+            }
+
+            renderDynamicLists();
+            saveAndRender();
+        }
+
+        function setLineOutputMode(lineNum, mode) {
+// ... existing code ... -->
+        function setBatchingMode(mode) {
+            state.batchingMode = mode;
+            saveAndRender();
+        }
+
+        function mapSupervisorToSignOff(name) {
+            return name === 'Balaji' ? 'N. Balaji' : name;
+        }
+
+        function toggleSupervisor(name) {
+            const idx = state.supervisors.indexOf(name);
+            const signOffName = mapSupervisorToSignOff(name);
+            if (idx === -1) {
+                state.supervisors.push(name);
+                // Auto-sync sign-off bubbles when selected
+                if (!state.signOffSelected.includes(signOffName)) {
+                    state.signOffSelected.push(signOffName);
+                }
+            } else {
+                state.supervisors.splice(idx, 1);
+                // Remove from sign-off bubbles if deselected
+                const sIdx = state.signOffSelected.indexOf(signOffName);
+                if (sIdx !== -1) state.signOffSelected.splice(sIdx, 1);
+            }
+            saveAndRender();
+        }
+
+        function toggleQc(name) {
+// ... existing code ... -->
+            // Line 1 & Line 2 Active / Metrics Visibility
+            [1, 2].forEach(num => {
+                const isActive = state[`l${num}Active`];
+                const actBtn = document.getElementById(`l${num}ActiveBtn`);
+                const inactBtn = document.getElementById(`l${num}InactiveBtn`);
+                const body = document.getElementById(`line${num}Body`);
+                const metricsBox = document.getElementById(`l${num}OutputMetricsBox`);
+
+                if (isActive) {
+                    actBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition bg-emerald-600 text-white shadow-xs';
+                    inactBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
+                    body.classList.remove('hidden');
+                } else {
+                    inactBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition bg-slate-700 text-white shadow-xs';
+                    actBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
+                    body.classList.add('hidden');
+                }
+
+                // Always keep output/hours/running hrs input fields visible and editable
+                metricsBox.classList.remove('hidden');
+
+                // Output Mode (Current vs Final)
+                const mode = state[`l${num}OutputMode`];
+// ... existing code ... -->
+                } else {
+                    finBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition bg-emerald-600 text-white shadow-xs';
+                    curBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold transition text-slate-600';
+                    outLabel.textContent = 'Final Output (MT)';
+                }
+            });
+
+            // Always keep Total Output checkbox visible so user can pre-configure anytime
+            document.getElementById('totalOutputToggleRow').classList.remove('hidden');
+
+            // Batching Mode UI
+// ... existing code ... -->
