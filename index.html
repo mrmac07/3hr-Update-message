@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#075e54" />
+<link rel="manifest" href="./manifest.json" />
+<link rel="icon" type="image/svg+xml" href="./icon.svg" />
     <title>WhatsApp Shift Report Generator</title>
     <style>
         /* =========================================================
@@ -847,8 +850,8 @@
                         <div class="field">
                             <span class="field-label">Shift</span>
                             <div class="grid-2-always">
-                                <button type="button" class="bubble-btn shift-pill" data-shift="Morning">Morning</button>
-                                <button type="button" class="bubble-btn shift-pill" data-shift="Night">Night</button>
+                                <button type="button" class="bubble-btn shift-pill" data-shift="Morning">☀️ Morning</button>
+                                <button type="button" class="bubble-btn shift-pill" data-shift="Night">🌙 Night</button>
                             </div>
                         </div>
                     </div>
@@ -1111,10 +1114,6 @@
             <section class="card">
                 <div class="card-header">
                     <h2 class="card-title"><span class="dot dot-cyan"></span>Product &amp; WO Details</h2>
-                    <div class="pill-group">
-                        <button type="button" id="woTab1Btn" class="pill-btn">Line 1</button>
-                        <button type="button" id="woTab2Btn" class="pill-btn">Line 2</button>
-                    </div>
                 </div>
                 <div class="card-body">
                     <div id="woPanel1" style="display: flex; flex-direction: column; gap: 10px;">
@@ -1125,13 +1124,15 @@
                         <div id="l1WoList" style="display: flex; flex-direction: column; gap: 10px;"></div>
                     </div>
 
-                    <div id="woPanel2" class="hidden" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div id="woPanel2" style="display: flex; flex-direction: column; gap: 10px;">
                         <div class="list-header">
                             <span class="field-label">Line 2 Work Orders</span>
                             <button type="button" id="addL2WoBtn" class="btn-small">+ Add WO</button>
                         </div>
                         <div id="l2WoList" style="display: flex; flex-direction: column; gap: 10px;"></div>
                     </div>
+
+                    <p id="woNoActiveHint" class="empty-hint hidden">No active production lines.</p>
                 </div>
             </section>
 
@@ -1201,7 +1202,6 @@
             ];
 
             var state = null;
-            var activeWoTab = 1;
             var toastTimer = null;
 
             /* =========================================================
@@ -1697,17 +1697,19 @@
                     allPresBtn.className = isAllP ? 'btn-small active-green' : 'btn-small';
                 }
 
-                // WO Tabs
-                if (el('woTab1Btn') && el('woTab2Btn') && el('woPanel1') && el('woPanel2')) {
-                    el('woTab1Btn').className = activeWoTab === 1 ? 'pill-btn active-cyan' : 'pill-btn';
-                    el('woTab2Btn').className = activeWoTab === 2 ? 'pill-btn active-cyan' : 'pill-btn';
-                    if (activeWoTab === 1) {
-                        el('woPanel1').classList.remove('hidden');
-                        el('woPanel2').classList.add('hidden');
-                    } else {
-                        el('woPanel2').classList.remove('hidden');
-                        el('woPanel1').classList.add('hidden');
-                    }
+                // Product & WO Dynamic Visibility (Stacked vertically for active lines only)
+                var woP1 = el('woPanel1');
+                var woP2 = el('woPanel2');
+                var woHint = el('woNoActiveHint');
+                if (woP1 && woP2 && woHint) {
+                    if (state.l1Active) woP1.classList.remove('hidden');
+                    else woP1.classList.add('hidden');
+
+                    if (state.l2Active) woP2.classList.remove('hidden');
+                    else woP2.classList.add('hidden');
+
+                    if (!state.l1Active && !state.l2Active) woHint.classList.remove('hidden');
+                    else woHint.classList.add('hidden');
                 }
 
                 // Sign-off Bubbles
@@ -1862,9 +1864,9 @@
                     lines.push(lv);
                 }
                 lines.push('');
-
-                // Product & WO Details
+                // Product & WO Details (Only for active lines)
                 [1, 2].forEach(function (n) {
+                    if (!state['l' + n + 'Active']) return;
                     var valid = (state['l' + n + 'Wos'] || []).filter(function (w) {
                         return (w.name || '').trim() || (w.wo || '').trim();
                     });
@@ -1945,14 +1947,17 @@
                 var temp = document.createElement('textarea');
                 temp.value = text;
                 temp.readOnly = true;
-                temp.setAttribute('readonly', '');
-                temp.tabIndex = -1;
                 temp.style.position = 'fixed';
-                temp.style.top = '-9999px';
+                temp.style.top = '0';
                 temp.style.left = '-9999px';
                 temp.style.opacity = '0';
                 document.body.appendChild(temp);
 
+                try {
+                    temp.focus({ preventScroll: true });
+                } catch (e) {
+                    // Fallback for older browsers
+                }
                 temp.select();
                 temp.setSelectionRange(0, text.length);
 
@@ -2005,7 +2010,6 @@
                 if (el('confirmResetBtn') && modal) {
                     el('confirmResetBtn').addEventListener('click', function () {
                         state = createDefaultState();
-                        activeWoTab = 1;
                         persistState();
                         syncInputsFromState();
                         renderRemarksList(1);
@@ -2191,20 +2195,6 @@
                         state.leaveText = e.target.value;
                         autoResize(e.target);
                         saveAndRefresh();
-                    });
-                }
-
-                // WO Tabs
-                if (el('woTab1Btn')) {
-                    el('woTab1Btn').addEventListener('click', function () {
-                        activeWoTab = 1;
-                        updateCalculatedUI();
-                    });
-                }
-                if (el('woTab2Btn')) {
-                    el('woTab2Btn').addEventListener('click', function () {
-                        activeWoTab = 2;
-                        updateCalculatedUI();
                     });
                 }
 
